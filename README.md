@@ -31,12 +31,3 @@ A mobile app designed for amateur sports competitions. The **Sport Event Organiz
 ## 📐 Wireframes / Mockups
 > Initial sketches or mockups of the app screens (Home, Event Creation, Teams, Scoreboard, etc.)  
 > Figma link: https://www.figma.com/design/HGYZaQNY97f8Z4YYkAvwpt/Untitled?node-id=0-1&t=L9XhqcFIBTNV23WJ-1%E2%81%A9
-
----
-
-## 📂 Repository Structure
-/SportEventOrganizer
-├── /app                # Main Android project files
-├── /docs               # Wireframes, mockups, diagrams
-├── README.md           # Project documentation
-└── LICENSE             # License file (optional, e.g., MIT)
