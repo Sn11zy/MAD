@@ -37,6 +37,6 @@ A mobile app designed for amateur sports competitions. The **Sport Event Organiz
 ## 📂 Repository Structure
 /SportEventOrganizer
 ├── /app                # Main Android project files
-├── /planning           # Wireframes, mockups, diagrams
+├── /docs               # Wireframes, mockups, diagrams
 ├── README.md           # Project documentation
 └── LICENSE             # License file (optional, e.g., MIT)
