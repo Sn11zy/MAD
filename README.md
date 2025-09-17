@@ -23,11 +23,7 @@ A mobile app designed for amateur sports competitions. The **Sport Event Organiz
 ---
 
 ## 🛠 Tools & Frameworks
-- **Language:** Kotlin
-- **IDE:** Android Studio
-- **UI Framework:** Jetpack Compose (or XML layouts)
-- **Database:** Room Database
-- **Networking:** Retrofit (for future API integration)
+- **Language:** Kotlins
 - **Version Control:** Git + GitHub
 
 ---
