@@ -9,12 +9,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun OrganizeScreen() {
+fun UserScreen() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = "Organize", style = MaterialTheme.typography.headlineMedium)
+        Text(text = "User", style = MaterialTheme.typography.headlineMedium)
     }
 }
+
 
