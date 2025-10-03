@@ -8,5 +8,5 @@ import androidx.room.PrimaryKey
 data class Competition(
     @PrimaryKey val id: Int,
     @ColumnInfo(name = "competition_name") val competitionName: String?,
-    @ColumnInfo(name = "last_name") val organizer: String?
+    @ColumnInfo(name = "organizer") val organizer: String?
 )
