@@ -33,7 +33,11 @@ class MainActivity : ComponentActivity() {
                         composable("referee") { RefereeScreen() }
                         composable("competitor") { CompetitorScreen() }
                         composable("user") { UserScreen() }
-                        composable("about") { AboutScreen() }
+                        composable("about") {
+                            AboutScreen(            onUpPress = { navController.navigateUp() }
+                            )
+                        }
+
                     }
                 }
             }
