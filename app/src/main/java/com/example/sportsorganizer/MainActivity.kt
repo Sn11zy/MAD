@@ -40,8 +40,12 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(onNavigate = { route -> navController.navigate(route) })
                         }
                         composable("organize") { OrganizeScreen(competitionDao = db.competitionDao()) }
-                        composable("referee") { RefereeScreen() }
-                        composable("competitor") { CompetitorScreen() }
+                        composable("referee") { RefereeScreen(onUpPress = { navController.navigateUp()
+                        }) }
+                        composable("competitor") {
+                            CompetitorScreen(onUpPress = { navController.navigateUp()
+                                 })
+                        }
                         composable("about") {
                             AboutScreen(            onUpPress = { navController.navigateUp() }
                             )
