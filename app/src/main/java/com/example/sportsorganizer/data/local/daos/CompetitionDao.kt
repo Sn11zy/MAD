@@ -5,11 +5,12 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.sportsorganizer.data.local.entities.Competition
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CompetitionDao {
     @Query("SELECT * FROM competition")
-    fun getAll(): List<Competition>
+    fun getAll(): Flow<List<Competition>>
 
     @Query("SELECT * FROM competition WHERE id IN (:ids)")
     fun loadAllByIds(ids: IntArray): List<Competition>

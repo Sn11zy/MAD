@@ -8,6 +8,7 @@ import com.example.sportsorganizer.data.local.entities.Competition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddCompetitionViewModel(
@@ -24,6 +25,17 @@ class AddCompetitionViewModel(
     private val _creationResult: MutableStateFlow<CreationResult> =
         MutableStateFlow(CreationResult.Idle)
     val creationResult: StateFlow<CreationResult> = _creationResult
+
+    private val _competitions = MutableStateFlow<List<Competition>>(emptyList())
+    val competitions: StateFlow<List<Competition>> = _competitions.asStateFlow()
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            competitionDao.getAll().collect { competitions ->
+                _competitions.value = competitions
+            }
+        }
+    }
 
     fun createCompetition(competitionName: String?, organizerId: Long) {
         _creationResult.value = CreationResult.Loading
