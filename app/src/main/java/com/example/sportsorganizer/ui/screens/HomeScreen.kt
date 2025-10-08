@@ -26,7 +26,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
         topBar = {
             Box(
                 modifier = Modifier.padding(16.dp),
-                contentAlignment = Alignment.TopEnd
+                contentAlignment = Alignment.TopEnd,
             ) {
                 FloatingActionButton(onClick = { onNavigate("user") }) {
                     Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = "User")
@@ -36,19 +36,20 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
         bottomBar = {
             Box(
                 modifier = Modifier.padding(16.dp),
-                contentAlignment = Alignment.BottomCenter
+                contentAlignment = Alignment.BottomCenter,
             ) {
                 Button(onClick = { onNavigate("about") }) {
                     Text("About")
                 }
             }
-        }
+        },
     ) { innerPadding: PaddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            contentAlignment = Alignment.Center,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Button(onClick = { onNavigate("organize") }) { Text("Organize") }

@@ -27,10 +27,7 @@ import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RefereeScreen(
-    onUpPress: () -> Unit
-) {
-
+fun RefereeScreen(onUpPress: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -39,33 +36,32 @@ fun RefereeScreen(
                     IconButton(onClick = onUpPress) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.navigate_back_description)
+                            contentDescription = stringResource(id = R.string.navigate_back_description),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
             )
-        }
-    ) {  innerPadding ->
+        },
+    ) { innerPadding ->
 
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
         }
-
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
@@ -74,5 +70,3 @@ fun RefereeScreenPreview() {
         CompetitorScreen(onUpPress = {})
     }
 }
-
-

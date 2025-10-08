@@ -5,11 +5,11 @@ import androidx.room.Entity
 import androidx.room.Relation
 
 @Entity
-data class UserWithCompetitions (
+data class UserWithCompetitions(
     @Embedded val user: User,
     @Relation(
         parentColumn = "id",
-        entityColumn = "organizer_id"
+        entityColumn = "organizer_id",
     )
-    val playlists: List<Competition>
+    val playlists: List<Competition>,
 )
