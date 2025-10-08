@@ -26,6 +26,7 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF191C1A)
 )
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun SportsOrganizerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

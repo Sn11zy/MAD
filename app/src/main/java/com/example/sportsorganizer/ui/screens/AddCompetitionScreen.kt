@@ -30,6 +30,7 @@ import com.example.sportsorganizer.data.local.daos.CompetitionDao
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModel
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun OrganizeScreen(competitionDao: CompetitionDao) {
     Scaffold { innerPadding: PaddingValues ->

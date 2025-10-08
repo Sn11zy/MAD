@@ -27,6 +27,7 @@ import com.example.sportsorganizer.data.local.daos.UserDao
 import com.example.sportsorganizer.ui.viewmodel.CreateUserViewModel
 import com.example.sportsorganizer.ui.viewmodel.CreateUserViewModelFactory
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun UserScreen(userDao: UserDao) {
     Scaffold { innerPadding: PaddingValues ->

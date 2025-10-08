@@ -27,12 +27,10 @@ import androidx.compose.ui.unit.dp
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 
+@Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompetitorScreen(
-    onUpPress: () -> Unit
-) {
-
+fun CompetitorScreen(onUpPress: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -41,33 +39,32 @@ fun CompetitorScreen(
                     IconButton(onClick = onUpPress) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.navigate_back_description)
+                            contentDescription = stringResource(id = R.string.navigate_back_description),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
             )
-        }
-    ) {  innerPadding ->
+        },
+    ) { innerPadding ->
 
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
         }
-
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
@@ -76,5 +73,3 @@ fun CompetitorScreenPreview() {
         CompetitorScreen(onUpPress = {})
     }
 }
-
-

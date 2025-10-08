@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 
+@Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RefereeScreen(onUpPress: () -> Unit) {

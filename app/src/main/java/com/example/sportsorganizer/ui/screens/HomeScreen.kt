@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun HomeScreen(onNavigate: (String) -> Unit) {
     Scaffold(
@@ -60,6 +61,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {

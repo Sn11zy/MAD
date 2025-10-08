@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 
+@Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onUpPress: () -> Unit) {
@@ -67,6 +68,7 @@ fun AboutScreen(onUpPress: () -> Unit) {
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Preview(showBackground = true)
 @Composable
 fun AboutScreenPreview() {
