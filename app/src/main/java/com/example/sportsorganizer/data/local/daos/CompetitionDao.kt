@@ -12,15 +12,18 @@ interface CompetitionDao {
     @Query("SELECT * FROM competition")
     fun getAll(): Flow<List<Competition>>
 
+    @Query("SELECT * FROM competition WHERE id = :id")
+    suspend fun findById(id: Long): Competition?
+
     @Query("SELECT * FROM competition WHERE id IN (:ids)")
-    fun loadAllByIds(ids: IntArray): List<Competition>
+    suspend fun loadAllByIds(ids: IntArray): List<Competition>
 
     @Query("SELECT * FROM competition WHERE competition_name LIKE :name LIMIT 1")
-    fun findByName(name: String): Competition
+    suspend fun findByName(name: String): Competition?
 
     @Insert
-    fun insertAll(vararg competition: Competition)
+    suspend fun insertAll(vararg competition: Competition): List<Long>
 
     @Delete
-    fun delete(competition: Competition)
+    suspend fun delete(competition: Competition)
 }
