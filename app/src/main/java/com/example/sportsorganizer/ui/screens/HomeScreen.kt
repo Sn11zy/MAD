@@ -66,42 +66,31 @@ fun HomeScreen(onNavigate: (String) -> Unit, competitionDao: CompetitionDao) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(onClick = { onNavigate("organize") }) { Text("Organize") }
-                Button(onClick = { onNavigate("referee") }) { Text("Referee") }
-                Button(onClick = { onNavigate("competitor") }) { Text("Competitor") }
-                LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
-                    items(competitions) { competition ->
-                        Card(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .clickable {
-                                    onNavigate("competitionDetail/${competition.id}")
-                                }
-                        ) {
-                            Text(
-                                text = competition.competitionName ?: "No name",
-                                modifier = Modifier.padding(16.dp)
-                            )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(onClick = { onNavigate("organize") }) { Text("Organize") }
+                    Button(onClick = { onNavigate("referee") }) { Text("Referee") }
+                    Button(onClick = { onNavigate("competitor") }) { Text("Competitor") }
+                    LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
+                        items(competitions) { competition ->
+                            Card(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .clickable {
+                                        onNavigate("competitionDetail/${competition.id}")
+                                    }
+                            ) {
+                                Text(
+                                    text = competition.competitionName ?: "No name",
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-    }
-}
-@Suppress("ktlint:standard:function-naming")
-@Preview(showBackground = true)
-@Composable
-private fun HomeScreenPreview() {
-    MaterialTheme {
-        // This is a preview, so we can't provide a real DAO.
-        // We'll pass a dummy lambda for onNavigate.
-        HomeScreen(onNavigate = {}, competitionDao = object : CompetitionDao {
-            override fun getAll(): kotlinx.coroutines.flow.Flow<List<Competition>> = kotlinx.coroutines.flow.flowOf(emptyList())
-            override fun loadAllByIds(ids: IntArray): List<Competition> = emptyList()
-            override fun findByName(name: String): Competition? = null
-            override fun insertAll(vararg competition: Competition): List<Long> = emptyList()
-            override fun delete(competition: Competition) {}
-        })
     }
 }

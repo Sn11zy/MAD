@@ -11,5 +11,5 @@ data class Competition(
     @ColumnInfo(name = "organizer_id") val organizer: Long,
     @ColumnInfo(name = "latitude") val latitude: Double,
     @ColumnInfo(name = "longitude") val longitude: Double,
-    @ColumnInfo(name = "event_date") val eventDate: String
+    @ColumnInfo(name = "event_date") val eventDate: String,
 )
