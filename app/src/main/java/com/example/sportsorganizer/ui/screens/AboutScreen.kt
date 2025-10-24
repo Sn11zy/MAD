@@ -23,7 +23,7 @@ import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 fun AboutScreen(onUpPress: () -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.about_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onUpPress) {
@@ -34,7 +34,7 @@ fun AboutScreen(onUpPress: () -> Unit) {
                     }
                 },
                 colors =
-                    TopAppBarDefaults.topAppBarColors(
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,

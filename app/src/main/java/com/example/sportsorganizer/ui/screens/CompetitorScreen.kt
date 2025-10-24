@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,7 +34,7 @@ import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 fun CompetitorScreen(onUpPress: () -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.competitor_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onUpPress) {
@@ -44,7 +45,7 @@ fun CompetitorScreen(onUpPress: () -> Unit) {
                     }
                 },
                 colors =
-                    TopAppBarDefaults.topAppBarColors(
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -66,6 +67,7 @@ fun CompetitorScreen(onUpPress: () -> Unit) {
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Preview(showBackground = true)
 @Composable
 fun CompetitorScreenPreview() {

@@ -2,9 +2,10 @@
     <string name="app_name">Sport Event Organizer</string>
 
     <string name="about_screen_title">About</string>
-    <string name="about_screen_description">A mobile app designed for amateur sports competitions. The Sport Event Organizer helps event managers simplify planning and coordination by reducing manual work and paperwork. Organizers can easily create, manage, and track small-scale tournaments or matches through a streamlined interface.</string>
-    <string name="navigate_back_description">Back</string>
 
+    <string name="about_screen_description">A mobile app designed for amateur sports competitions. The Sport Event Organizer helps event managers simplify planning and coordination by reducing manual work and paperwork. Organizers can easily create, manage, and track small-scale tournaments or matches through a streamlined interface.</string>
+
+    <string name="navigate_back_description">Back</string>
 
     <string name="competitor_screen_title">Competitor</string>
 
@@ -14,7 +15,10 @@
 
     <string name="user_screen_title">User</string>
 
+    <string name="create_user_title">Create User</string>
 
+    <string name="competition_title">Competition</string>
 
+    <string name="add_competition_title">Create Competition</string>
 </resources>
     
