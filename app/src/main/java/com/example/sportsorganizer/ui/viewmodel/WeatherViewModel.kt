@@ -12,18 +12,27 @@ import kotlinx.coroutines.launch
 
 sealed class UiState {
     object Loading : UiState()
-    data class Success(val weather: WeatherResponse) : UiState()
-    data class Error(val message: String) : UiState()
+
+    data class Success(
+        val weather: WeatherResponse,
+    ) : UiState()
+
+    data class Error(
+        val message: String,
+    ) : UiState()
 }
 
 class WeatherViewModel(
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState
 
-    fun fetchWeather(latitude: Double, longitude: Double, date: String) {
+    fun fetchWeather(
+        latitude: Double,
+        longitude: Double,
+        date: String,
+    ) {
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             when (val result = weatherRepository.getWeather(latitude, longitude, date)) {
@@ -39,7 +48,7 @@ class WeatherViewModel(
 }
 
 class WeatherViewModelFactory(
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WeatherViewModel::class.java)) {

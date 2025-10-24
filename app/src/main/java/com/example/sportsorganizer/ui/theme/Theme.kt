@@ -12,30 +12,33 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF80DA9D),
-    onPrimary = Color(0xFF00391D),
-    background = Color(0xFF191C1A),
-    onSurface = Color(0xFFE1E3DF)
-)
+private val DarkColorScheme =
+    darkColorScheme(
+        primary = Color(0xFF80DA9D),
+        onPrimary = Color(0xFF00391D),
+        background = Color(0xFF191C1A),
+        onSurface = Color(0xFFE1E3DF),
+    )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF006D3D),
-    onPrimary = Color.White,
-    background = Color(0xFFFBFDF8),
-    onSurface = Color(0xFF191C1A)
-)
+private val LightColorScheme =
+    lightColorScheme(
+        primary = Color(0xFF006D3D),
+        onPrimary = Color.White,
+        background = Color(0xFFFBFDF8),
+        onSurface = Color(0xFF191C1A),
+    )
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SportsOrganizerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme =
+        when {
+            darkTheme -> DarkColorScheme
+            else -> LightColorScheme
+        }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -48,6 +51,6 @@ fun SportsOrganizerTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

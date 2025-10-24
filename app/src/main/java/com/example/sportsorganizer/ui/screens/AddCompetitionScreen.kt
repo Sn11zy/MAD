@@ -39,9 +39,10 @@ import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 @Composable
 fun OrganizeScreen(competitionDao: CompetitionDao) {
     Scaffold { innerPadding: PaddingValues ->
-        val viewModel: AddCompetitionViewModel = viewModel(
-            factory = AddCompetitionViewModelFactory(competitionDao)
-        )
+        val viewModel: AddCompetitionViewModel =
+            viewModel(
+                factory = AddCompetitionViewModelFactory(competitionDao),
+            )
 
         var name by remember { mutableStateOf("") }
         var organizerId by remember { mutableStateOf("") }
@@ -55,12 +56,13 @@ fun OrganizeScreen(competitionDao: CompetitionDao) {
         val competitions by viewModel.competitions.collectAsState()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(text = "Create Competition", style = MaterialTheme.typography.headlineMedium)
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
@@ -68,18 +70,18 @@ fun OrganizeScreen(competitionDao: CompetitionDao) {
             Box {
                 ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
+                    onExpandedChange = { expanded = !expanded },
                 ) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.onSearchQueryChanged(it) },
                         label = { Text("City") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor()
+                        modifier = Modifier.menuAnchor(),
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
                     ) {
                         searchResults.forEach { city ->
                             DropdownMenuItem(
@@ -87,7 +89,7 @@ fun OrganizeScreen(competitionDao: CompetitionDao) {
                                 onClick = {
                                     viewModel.onCitySelected(city)
                                     expanded = false
-                                }
+                                },
                             )
                         }
                     }

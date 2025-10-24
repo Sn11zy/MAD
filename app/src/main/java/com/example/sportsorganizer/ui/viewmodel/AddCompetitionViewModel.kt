@@ -8,8 +8,8 @@ import com.example.sportsorganizer.data.local.entities.Competition
 import com.example.sportsorganizer.data.remote.City
 import com.example.sportsorganizer.data.repository.GeocodingRepository
 import com.example.sportsorganizer.data.repository.Result
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,7 +88,11 @@ class AddCompetitionViewModel(
         _searchResults.value = emptyList()
     }
 
-    fun createCompetition(competitionName: String?, organizerId: Long, eventDate: String) {
+    fun createCompetition(
+        competitionName: String?,
+        organizerId: Long,
+        eventDate: String,
+    ) {
         val city = _selectedCity.value
         if (city == null) {
             _creationResult.value = CreationResult.Error("Please select a city")
@@ -98,13 +102,14 @@ class AddCompetitionViewModel(
         _creationResult.value = CreationResult.Loading
         viewModelScope.launch {
             try {
-                val competition = Competition(
-                    competitionName = competitionName,
-                    organizer = organizerId,
-                    latitude = city.latitude,
-                    longitude = city.longitude,
-                    eventDate = eventDate
-                )
+                val competition =
+                    Competition(
+                        competitionName = competitionName,
+                        organizer = organizerId,
+                        latitude = city.latitude,
+                        longitude = city.longitude,
+                        eventDate = eventDate,
+                    )
                 val newId = competitionDao.insertAll(competition)
                 _creationResult.value = CreationResult.Success(newId.first())
             } catch (e: Exception) {

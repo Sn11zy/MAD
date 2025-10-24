@@ -6,12 +6,15 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitInstance {
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
+    private val moshi =
+        Moshi
+            .Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
 
     val api: WeatherApiService by lazy {
-        Retrofit.Builder()
+        Retrofit
+            .Builder()
             .baseUrl("https://api.open-meteo.com/")
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -19,7 +22,8 @@ object RetrofitInstance {
     }
 
     val geocodingApi: WeatherApiService by lazy {
-        Retrofit.Builder()
+        Retrofit
+            .Builder()
             .baseUrl("https://geocoding-api.open-meteo.com/")
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()

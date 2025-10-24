@@ -1,10 +1,12 @@
 package com.example.sportsorganizer.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,18 +26,20 @@ import com.example.sportsorganizer.data.repository.WeatherRepository
 import com.example.sportsorganizer.ui.viewmodel.UiState
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModel
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModelFactory
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Button
 
 @Composable
-fun CompetitionDetailScreen(competitionId: Long, competitionDao: CompetitionDao) {
+fun CompetitionDetailScreen(
+    competitionId: Long,
+    competitionDao: CompetitionDao,
+) {
     val competition by produceState<Competition?>(initialValue = null, key1 = competitionId) {
         value = competitionDao.findById(competitionId)
     }
 
-    val viewModel: WeatherViewModel = viewModel(
-        factory = WeatherViewModelFactory(WeatherRepository())
-    )
+    val viewModel: WeatherViewModel =
+        viewModel(
+            factory = WeatherViewModelFactory(WeatherRepository()),
+        )
 
     LaunchedEffect(competition) {
         competition?.let {
@@ -49,12 +53,13 @@ fun CompetitionDetailScreen(competitionId: Long, competitionDao: CompetitionDao)
             val uiState by viewModel.uiState.collectAsState()
 
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = currentCompetition.competitionName ?: "No name", style = MaterialTheme.typography.headlineMedium)
 
