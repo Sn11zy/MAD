@@ -17,4 +17,12 @@ object RetrofitInstance {
             .build()
             .create(WeatherApiService::class.java)
     }
+
+    val geocodingApi: WeatherApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://geocoding-api.open-meteo.com/")
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(WeatherApiService::class.java)
+    }
 }

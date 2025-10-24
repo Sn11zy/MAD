@@ -13,4 +13,10 @@ interface WeatherApiService {
         @Query("start_date") startDate: String,
         @Query("end_date") endDate: String
     ): WeatherResponse
+
+    @GET("v1/search")
+    suspend fun searchCity(
+        @Query("name") name: String,
+        @Query("count") count: Int = 10
+    ): GeocodingResponse
 }

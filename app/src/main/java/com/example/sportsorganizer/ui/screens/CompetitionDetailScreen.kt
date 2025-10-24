@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -23,21 +24,28 @@ import com.example.sportsorganizer.data.repository.WeatherRepository
 import com.example.sportsorganizer.ui.viewmodel.UiState
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModel
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModelFactory
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Button
 
 @Composable
 fun CompetitionDetailScreen(competitionId: Long, competitionDao: CompetitionDao) {
-    val competition = produceState<Competition?>(initialValue = null, producer = {
+    val competition by produceState<Competition?>(initialValue = null, key1 = competitionId) {
         value = competitionDao.findById(competitionId)
-    })
+    }
 
     val viewModel: WeatherViewModel = viewModel(
         factory = WeatherViewModelFactory(WeatherRepository())
     )
 
-    Scaffold { innerPadding: PaddingValues ->
-        competition.value?.let {
+    LaunchedEffect(competition) {
+        competition?.let {
             viewModel.fetchWeather(it.latitude, it.longitude, it.eventDate)
+        }
+    }
 
+    Scaffold { innerPadding: PaddingValues ->
+        val currentCompetition = competition
+        if (currentCompetition != null) {
             val uiState by viewModel.uiState.collectAsState()
 
             Column(
@@ -48,22 +56,32 @@ fun CompetitionDetailScreen(competitionId: Long, competitionDao: CompetitionDao)
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = it.competitionName ?: "No name", style = MaterialTheme.typography.headlineMedium)
+                Text(text = currentCompetition.competitionName ?: "No name", style = MaterialTheme.typography.headlineMedium)
 
-                when (uiState) {
+                Button(onClick = {
+                    viewModel.fetchWeather(currentCompetition.latitude, currentCompetition.longitude, currentCompetition.eventDate)
+                }) {
+                    Text("Refresh Weather")
+                }
+
+                when (val state = uiState) {
                     is UiState.Loading -> {
                         CircularProgressIndicator()
                     }
                     is UiState.Success -> {
-                        val weather = (uiState as UiState.Success).weather.daily
+                        val weather = state.weather.daily
                         Text("Max Temperature: ${weather.temperatureMax.first()}°C")
                         Text("Precipitation Probability: ${weather.precipitationProbabilityMax.first()}%")
                         Text("Max Wind Speed: ${weather.windSpeedMax.first()} km/h")
                     }
                     is UiState.Error -> {
-                        Text(text = (uiState as UiState.Error).message, color = MaterialTheme.colorScheme.error)
+                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
                     }
                 }
+            }
+        } else {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
         }
     }
