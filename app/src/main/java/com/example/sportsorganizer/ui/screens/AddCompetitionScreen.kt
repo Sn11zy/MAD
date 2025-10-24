@@ -41,6 +41,9 @@ fun OrganizeScreen(competitionDao: CompetitionDao) {
 
         var name by remember { mutableStateOf("") }
         var organizerId by remember { mutableStateOf("") }
+        var latitude by remember { mutableStateOf("") }
+        var longitude by remember { mutableStateOf("") }
+        var eventDate by remember { mutableStateOf("") }
         val context = LocalContext.current
         val result by viewModel.creationResult.collectAsState()
         val competitions by viewModel.competitions.collectAsState()
@@ -57,9 +60,14 @@ fun OrganizeScreen(competitionDao: CompetitionDao) {
             Text(text = "Create Competition", style = MaterialTheme.typography.headlineMedium)
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
             OutlinedTextField(value = organizerId, onValueChange = { organizerId = it }, label = { Text("Organizer ID") })
+            OutlinedTextField(value = latitude, onValueChange = { latitude = it }, label = { Text("Latitude") })
+            OutlinedTextField(value = longitude, onValueChange = { longitude = it }, label = { Text("Longitude") })
+            OutlinedTextField(value = eventDate, onValueChange = { eventDate = it }, label = { Text("Event Date (YYYY-MM-DD)") })
             Button(onClick = {
                 val organizer = organizerId.toLongOrNull() ?: 0L
-                viewModel.createCompetition(name.ifBlank { null }, organizer)
+                val lat = latitude.toDoubleOrNull() ?: 0.0
+                val lon = longitude.toDoubleOrNull() ?: 0.0
+                viewModel.createCompetition(name.ifBlank { null }, organizer, lat, lon, eventDate)
             }) { Text("Create") }
             Text(
                 text = "Existing Competitions",
@@ -94,7 +102,6 @@ fun OrganizeScreen(competitionDao: CompetitionDao) {
                 }
             }
         }
-
         LaunchedEffect(result) {
             when (result) {
                 is AddCompetitionViewModel.CreationResult.Success -> {
