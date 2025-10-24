@@ -12,14 +12,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddCompetitionViewModel(
-    private val competitionDao: CompetitionDao
+    private val competitionDao: CompetitionDao,
 ) : ViewModel() {
-
     sealed class CreationResult {
         data object Idle : CreationResult()
+
         data object Loading : CreationResult()
-        data class Success(val competitionId: Long) : CreationResult()
-        data class Error(val message: String) : CreationResult()
+
+        data class Success(
+            val competitionId: Long,
+        ) : CreationResult()
+
+        data class Error(
+            val message: String,
+        ) : CreationResult()
     }
 
     private val _creationResult: MutableStateFlow<CreationResult> =
@@ -37,18 +43,26 @@ class AddCompetitionViewModel(
         }
     }
 
-    fun createCompetition(competitionName: String?, organizerId: Long) {
+    fun createCompetition(
+        competitionName: String?,
+        organizerId: Long,
+        latitude: Double,
+        longitude: Double,
+        eventDate: String,
+    ) {
         _creationResult.value = CreationResult.Loading
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
-                val newCompetitionId: Long = System.currentTimeMillis()
-                val competition = Competition(
-                    id = newCompetitionId,
-                    competitionName = competitionName,
-                    organizer = organizerId
-                )
-                competitionDao.insertAll(competition)
-                _creationResult.value = CreationResult.Success(newCompetitionId)
+                val competition =
+                    Competition(
+                        competitionName = competitionName,
+                        organizer = organizerId,
+                        latitude = latitude,
+                        longitude = longitude,
+                        eventDate = eventDate,
+                    )
+                val newId = competitionDao.insertAll(competition)
+                _creationResult.value = CreationResult.Success(newId.first())
             } catch (e: Exception) {
                 _creationResult.value = CreationResult.Error(e.message ?: "Unknown error")
             }
@@ -57,7 +71,7 @@ class AddCompetitionViewModel(
 }
 
 class AddCompetitionViewModelFactory(
-    private val competitionDao: CompetitionDao
+    private val competitionDao: CompetitionDao,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AddCompetitionViewModel::class.java)) {
@@ -67,5 +81,3 @@ class AddCompetitionViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
-
-
