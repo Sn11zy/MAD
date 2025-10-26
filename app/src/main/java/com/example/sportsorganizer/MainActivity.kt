@@ -51,7 +51,15 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             "organize",
-                        ) { OrganizeScreen(onUpPress = { navController.navigateUp() }, competitionDao = db.competitionDao()) }
+                        ) {
+                            OrganizeScreen(
+                                onUpPress = { navController.navigateUp() },
+                                onNavigate = { route ->
+                                    navController.navigate(route)
+                                },
+                                competitionDao = db.competitionDao(),
+                            )
+                        }
                         composable("referee") {
                             RefereeScreen(onUpPress = {
                                 navController.navigateUp()

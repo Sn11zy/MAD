@@ -1,6 +1,7 @@
 package com.example.sportsorganizer.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +53,10 @@ import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 fun OrganizeScreen(
     onUpPress: () -> Unit,
     competitionDao: CompetitionDao,
+    onNavigate: (String) -> Unit,
 ) {
+    val competitions by competitionDao.getAll().collectAsState(initial = emptyList())
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -145,24 +150,21 @@ fun OrganizeScreen(
                     modifier = Modifier.padding(8.dp),
                 )
             } else {
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
+                LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
                     items(competitions) { competition ->
-                        Text(
-                            text =
-                                "${competition.competitionName ?: "Unnamed"} (ID: ${competition.id}, Organizer: ${competition.organizer})",
-                            style = MaterialTheme.typography.bodyLarge,
+                        Card(
                             modifier =
                                 Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .padding(horizontal = 8.dp),
-                        )
+                                    .padding(8.dp)
+                                    .clickable {
+                                        onNavigate("competitionDetail/${competition.id}")
+                                    },
+                        ) {
+                            Text(
+                                text = competition.competitionName ?: "No name",
+                                modifier = Modifier.padding(16.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -192,6 +194,7 @@ private fun OrganizeScreenPreview() {
     MaterialTheme {
         OrganizeScreen(
             onUpPress = {},
+            onNavigate = {},
             competitionDao =
                 object : CompetitionDao {
                     override fun getAll(): kotlinx.coroutines.flow.Flow<List<Competition>> = kotlinx.coroutines.flow.flowOf(emptyList())
