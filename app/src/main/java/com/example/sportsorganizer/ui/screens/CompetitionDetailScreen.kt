@@ -65,7 +65,7 @@ fun CompetitionDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.create_user_title)) },
+                title = { Text(stringResource(id = R.string.competition_title)) },
                 navigationIcon = {
                     IconButton(onClick = onUpPress) {
                         Icon(
