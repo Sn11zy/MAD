@@ -3,6 +3,7 @@ package com.example.sportsorganizer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
@@ -21,12 +22,19 @@ import com.example.sportsorganizer.ui.screens.HomeScreen
 import com.example.sportsorganizer.ui.screens.OrganizeScreen
 import com.example.sportsorganizer.ui.screens.RefereeScreen
 import com.example.sportsorganizer.ui.screens.UserScreen
+import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
+import com.example.sportsorganizer.ui.viewmodel.ThemeViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 class MainActivity : ComponentActivity() {
+    private val themeViewModel by viewModels<ThemeViewModel>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+            SportsOrganizerTheme(darkTheme = isDarkTheme) {
                 Surface {
                     val navController = rememberNavController()
                     val db =
@@ -47,6 +55,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onNavigate = { route -> navController.navigate(route) },
                                 competitionDao = db.competitionDao(),
+                                onToggleTheme = { themeViewModel.toggleTheme() }
                             )
                         }
                         composable(
