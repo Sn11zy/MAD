@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.data.local.daos.CompetitionDao
 import com.example.sportsorganizer.data.local.entities.Competition
+import com.example.sportsorganizer.data.local.session.SessionManager
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModel
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 
@@ -54,8 +55,6 @@ fun OrganizeScreen(
     competitionDao: CompetitionDao,
     onNavigate: (String) -> Unit,
 ) {
-    val competitions by competitionDao.getAll().collectAsState(initial = emptyList())
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -69,7 +68,7 @@ fun OrganizeScreen(
                     }
                 },
                 colors =
-                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -83,8 +82,10 @@ fun OrganizeScreen(
             )
 
         var name by remember { mutableStateOf("") }
-        var organizerId by remember { mutableStateOf("") }
         var eventDate by remember { mutableStateOf("") }
+        val contextForSession = LocalContext.current
+        val sessionManager = remember { SessionManager(contextForSession) }
+        val loggedInUserId = sessionManager.getLoggedInUserId()
         val searchQuery by viewModel.searchQuery.collectAsState()
         val searchResults by viewModel.searchResults.collectAsState()
         var expanded by remember { mutableStateOf(false) }
@@ -92,6 +93,10 @@ fun OrganizeScreen(
         val context = LocalContext.current
         val result by viewModel.creationResult.collectAsState()
         val competitions by viewModel.competitions.collectAsState()
+        val visibleCompetitions =
+            remember(competitions, loggedInUserId) {
+                if (loggedInUserId == null) emptyList() else competitions.filter { it.organizer == loggedInUserId }
+            }
 
         Column(
             modifier =
@@ -102,47 +107,54 @@ fun OrganizeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-            OutlinedTextField(value = organizerId, onValueChange = { organizerId = it }, label = { Text("Organizer ID") })
-            Box {
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChanged(it) },
-                        label = { Text("City") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
+            if (loggedInUserId != null) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+                Box {
+                    ExposedDropdownMenuBox(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false },
+                        onExpandedChange = { expanded = !expanded },
                     ) {
-                        searchResults.forEach { city ->
-                            DropdownMenuItem(
-                                text = { Text("${city.name}${city.country?.let { ", $it" } ?: ""}") },
-                                onClick = {
-                                    viewModel.onCitySelected(city)
-                                    expanded = false
-                                },
-                            )
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.onSearchQueryChanged(it) },
+                            label = { Text("City") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.menuAnchor(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                        ) {
+                            searchResults.forEach { city ->
+                                DropdownMenuItem(
+                                    text = { Text("${city.name}${city.country?.let { ", $it" } ?: ""}") },
+                                    onClick = {
+                                        viewModel.onCitySelected(city)
+                                        expanded = false
+                                    },
+                                )
+                            }
                         }
                     }
                 }
+                OutlinedTextField(value = eventDate, onValueChange = { eventDate = it }, label = { Text("Event Date (YYYY-MM-DD)") })
+                Button(onClick = {
+                    val organizer = loggedInUserId
+                    viewModel.createCompetition(name, organizer, eventDate)
+                }) { Text("Create") }
             }
-            OutlinedTextField(value = eventDate, onValueChange = { eventDate = it }, label = { Text("Event Date (YYYY-MM-DD)") })
-            Button(onClick = {
-                val organizer = organizerId.toLongOrNull() ?: 0L
-                viewModel.createCompetition(name, organizer, eventDate)
-            }) { Text("Create") }
             Text(
-                text = "Existing Competitions",
+                text = "Your competitions",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            if (competitions.isEmpty()) {
+            if (loggedInUserId == null) {
+                Text(
+                    text = "Log in to see your competitions",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(8.dp),
+                )
+            } else if (visibleCompetitions.isEmpty()) {
                 Text(
                     text = "No competitions found",
                     style = MaterialTheme.typography.bodyLarge,
@@ -150,7 +162,7 @@ fun OrganizeScreen(
                 )
             } else {
                 LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
-                    items(competitions) { competition ->
+                    items(visibleCompetitions) { competition ->
                         Card(
                             modifier =
                                 Modifier
@@ -160,7 +172,7 @@ fun OrganizeScreen(
                                     },
                         ) {
                             Text(
-                                text = competition.competitionName ?: "No name",
+                                text = competition.competitionName,
                                 modifier = Modifier.padding(16.dp),
                             )
                         }
@@ -174,7 +186,6 @@ fun OrganizeScreen(
                 is AddCompetitionViewModel.CreationResult.Success -> {
                     Toast.makeText(context, "Competition created", Toast.LENGTH_SHORT).show()
                     name = ""
-                    organizerId = ""
                 }
                 is AddCompetitionViewModel.CreationResult.Error -> {
                     val msg = (result as AddCompetitionViewModel.CreationResult.Error).message

@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavType
@@ -17,6 +19,7 @@ import com.example.sportsorganizer.data.local.dbs.AppDatabase
 import com.example.sportsorganizer.data.local.dbs.MIGRATION_1_2
 import com.example.sportsorganizer.data.local.dbs.MIGRATION_2_3
 import com.example.sportsorganizer.data.local.dbs.MIGRATION_3_4
+import com.example.sportsorganizer.data.local.dbs.MIGRATION_4_5
 import com.example.sportsorganizer.ui.screens.AboutScreen
 import com.example.sportsorganizer.ui.screens.CompetitionConfigScreen
 import com.example.sportsorganizer.ui.screens.CompetitionDetailScreen
@@ -27,9 +30,6 @@ import com.example.sportsorganizer.ui.screens.RefereeScreen
 import com.example.sportsorganizer.ui.screens.UserScreen
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 import com.example.sportsorganizer.ui.viewmodel.ThemeViewModel
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import com.example.sportsorganizer.data.local.dbs.MIGRATION_4_5
 
 class MainActivity : ComponentActivity() {
     private val themeViewModel by viewModels<ThemeViewModel>()
@@ -49,8 +49,7 @@ class MainActivity : ComponentActivity() {
                                     applicationContext,
                                     AppDatabase::class.java,
                                     "sports_organizer.db",
-                                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5
-                                )
+                                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                                 .build()
                         }
                     NavHost(
@@ -60,8 +59,7 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(
                                 onNavigate = { route -> navController.navigate(route) },
-                                competitionDao = db.competitionDao(),
-                                onToggleTheme = { themeViewModel.toggleTheme() }
+                                onToggleTheme = { themeViewModel.toggleTheme() },
                             )
                         }
                         composable(

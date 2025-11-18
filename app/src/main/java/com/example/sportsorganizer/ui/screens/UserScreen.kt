@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,16 +29,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.data.local.daos.UserDao
 import com.example.sportsorganizer.data.local.entities.User
+import com.example.sportsorganizer.data.local.session.SessionManager
+import com.example.sportsorganizer.data.repository.AuthRepository
 import com.example.sportsorganizer.ui.viewmodel.CreateUserViewModel
 import com.example.sportsorganizer.ui.viewmodel.CreateUserViewModelFactory
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("ktlint:standard:function-naming")
@@ -59,7 +64,7 @@ fun UserScreen(
                     }
                 },
                 colors =
-                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -74,10 +79,30 @@ fun UserScreen(
         val context = LocalContext.current
         val result by viewModel.creationResult.collectAsState()
 
+        val sessionManager = remember { SessionManager(context) }
+        var loggedInUserId by remember { mutableStateOf(sessionManager.getLoggedInUserId()) }
+        var loggedInUser by remember { mutableStateOf<User?>(null) }
+
+        LaunchedEffect(loggedInUserId) {
+            if (loggedInUserId != null) {
+                try {
+                    val users = userDao.loadAllByIds(longArrayOf(loggedInUserId!!))
+                    loggedInUser = users.firstOrNull()
+                } catch (_: Exception) {
+                    loggedInUser = null
+                }
+            } else {
+                loggedInUser = null
+            }
+        }
+
         var first by remember { mutableStateOf("") }
         var last by remember { mutableStateOf("") }
         var username by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
+
+        var loginUsername by remember { mutableStateOf("") }
+        var loginPassword by remember { mutableStateOf("") }
 
         Column(
             modifier =
@@ -88,24 +113,74 @@ fun UserScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            OutlinedTextField(value = first, onValueChange = { first = it }, label = { Text("First name") })
-            OutlinedTextField(value = last, onValueChange = { last = it }, label = { Text("Last name") })
-            OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") })
-            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") })
-            Button(onClick = {
-                viewModel.createUser(
-                    firstName = first.ifBlank { null },
-                    lastName = last.ifBlank { null },
-                    username = username,
-                    password = password,
-                )
-            }) { Text("Create") }
+            if (loggedInUserId == null) {
+                OutlinedTextField(value = first, onValueChange = { first = it }, label = { Text("First name") })
+                OutlinedTextField(value = last, onValueChange = { last = it }, label = { Text("Last name") })
+                OutlinedTextField(value = username, onValueChange = {
+                    username = it
+                }, label = { Text("Username") }, modifier = Modifier.testTag("create_username"))
+                OutlinedTextField(value = password, onValueChange = {
+                    password = it
+                }, label = { Text("Password") }, modifier = Modifier.testTag("create_password"))
+                Button(onClick = {
+                    viewModel.createUser(
+                        firstName = first.ifBlank { null },
+                        lastName = last.ifBlank { null },
+                        username = username,
+                        password = password,
+                    )
+                }, modifier = Modifier.testTag("create_button")) { Text("Create") }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text(text = "Login", style = MaterialTheme.typography.headlineSmall)
+                OutlinedTextField(value = loginUsername, onValueChange = {
+                    loginUsername = it
+                }, label = { Text("Username") }, modifier = Modifier.testTag("login_username"))
+                OutlinedTextField(value = loginPassword, onValueChange = {
+                    loginPassword = it
+                }, label = { Text("Password") }, modifier = Modifier.testTag("login_password"))
+                Button(onClick = {
+                    val repo = AuthRepository(userDao, context)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val resultLogin = repo.login(loginUsername.trim(), loginPassword)
+                        if (resultLogin.isSuccess) {
+                            val user = resultLogin.getOrNull()
+                            if (user != null) {
+                                sessionManager.saveLoggedInUserId(user.id)
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    loggedInUserId = user.id
+                                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            val msg = resultLogin.exceptionOrNull()?.message ?: "Login failed"
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }, modifier = Modifier.testTag("login_button")) { Text("Login") }
+            } else {
+                Text(text = "Logged in as: ${loggedInUser?.username ?: loggedInUserId}", style = MaterialTheme.typography.bodyLarge)
+                Button(onClick = {
+                    sessionManager.clearSession()
+                    loggedInUserId = null
+                    Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                }) { Text("Logout") }
+            }
         }
 
         LaunchedEffect(result) {
             when (result) {
                 is CreateUserViewModel.CreationResult.Success -> {
-                    Toast.makeText(context, "User created", Toast.LENGTH_SHORT).show()
+                    val userId = (result as CreateUserViewModel.CreationResult.Success).userId
+                    sessionManager.saveLoggedInUserId(userId)
+                    loggedInUserId = userId
+                    Toast.makeText(context, "User created and logged in", Toast.LENGTH_SHORT).show()
                 }
                 is CreateUserViewModel.CreationResult.Error -> {
                     val msg = (result as CreateUserViewModel.CreationResult.Error).message
@@ -114,35 +189,5 @@ fun UserScreen(
                 else -> Unit
             }
         }
-    }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Preview(showBackground = true)
-@Composable
-private fun UserScreenPreview() {
-    MaterialTheme {
-        UserScreen(
-            onUpPress = {},
-            userDao =
-                object : UserDao {
-                    override fun getAll(): List<User> = emptyList()
-
-                    override fun loadAllByIds(ids: IntArray): List<User> = emptyList()
-
-                    override fun findByUsername(username: String): User =
-                        User(
-                            id = 0,
-                            firstName = "John",
-                            lastName = "Doe",
-                            username = username,
-                            password = "password123",
-                        )
-
-                    override fun insertAll(vararg user: User) {}
-
-                    override fun delete(user: User) {}
-                },
-        )
     }
 }
