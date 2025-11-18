@@ -32,6 +32,7 @@ import com.example.sportsorganizer.data.local.entities.Competition
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
 
 @Suppress("ktlint:standard:function-naming")
@@ -53,7 +54,10 @@ fun HomeScreen(
             ) {
                 FloatingActionButton(
                     onClick = { onNavigate("user") },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+
                 ) {
                     Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = "User")
                 }
