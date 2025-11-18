@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AddCompetitionViewModel(
     private val competitionDao: CompetitionDao,
@@ -59,14 +60,20 @@ class AddCompetitionViewModel(
         }
 
         @OptIn(FlowPreview::class)
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _searchQuery.debounce(300).collect { query ->
                 if (query.isNotBlank()) {
-                    when (val result = geocodingRepository.searchCity(query)) {
-                        is Result.Success -> _searchResults.value = result.data
-                        is Result.Error -> {
-                            // Handle error, maybe expose it to the UI
+                    try {
+                        // perform network/geocoding work on IO (we're already on IO)
+                        when (val result = geocodingRepository.searchCity(query)) {
+                            is Result.Success -> _searchResults.value = result.data
+                            is Result.Error -> {
+                                // Handle error, maybe expose it to the UI
+                                _searchResults.value = emptyList()
+                            }
                         }
+                    } catch (e: Exception) {
+                        _searchResults.value = emptyList()
                     }
                 } else {
                     _searchResults.value = emptyList()
@@ -89,7 +96,7 @@ class AddCompetitionViewModel(
     }
 
     fun createCompetition(
-        competitionName: String?,
+        competitionName: String,
         organizerId: Long,
         eventDate: String,
     ) {
@@ -99,21 +106,31 @@ class AddCompetitionViewModel(
             return
         }
 
+        // Indicate loading on main
         _creationResult.value = CreationResult.Loading
-        viewModelScope.launch {
+
+        // Perform DB write on IO to avoid blocking UI
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                val competition =
-                    Competition(
-                        competitionName = competitionName,
-                        organizer = organizerId,
-                        latitude = city.latitude,
-                        longitude = city.longitude,
-                        eventDate = eventDate,
-                    )
-                val newId = competitionDao.insertAll(competition)
-                _creationResult.value = CreationResult.Success(newId.first())
+                val competition = Competition(
+                    competitionName = competitionName,
+                    organizer = organizerId,
+                    latitude = city.latitude,
+                    longitude = city.longitude,
+                    eventDate = eventDate,
+                    address = city.name,
+                )
+                val newIds = competitionDao.insertAll(competition)
+                val newId = newIds.firstOrNull() ?: 0L
+
+                // Switch to Main to update UI state
+                withContext(Dispatchers.Main) {
+                    _creationResult.value = CreationResult.Success(newId)
+                }
             } catch (e: Exception) {
-                _creationResult.value = CreationResult.Error(e.message ?: "Unknown error")
+                withContext(Dispatchers.Main) {
+                    _creationResult.value = CreationResult.Error(e.message ?: "Unknown error")
+                }
             }
         }
     }

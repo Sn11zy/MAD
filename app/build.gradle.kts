@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.material3)
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.retrofit)

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -136,7 +135,7 @@ fun OrganizeScreen(
             OutlinedTextField(value = eventDate, onValueChange = { eventDate = it }, label = { Text("Event Date (YYYY-MM-DD)") })
             Button(onClick = {
                 val organizer = organizerId.toLongOrNull() ?: 0L
-                viewModel.createCompetition(name.ifBlank { null }, organizer, eventDate)
+                viewModel.createCompetition(name, organizer, eventDate)
             }) { Text("Create") }
             Text(
                 text = "Existing Competitions",
@@ -157,7 +156,7 @@ fun OrganizeScreen(
                                 Modifier
                                     .padding(8.dp)
                                     .clickable {
-                                        onNavigate("competitionDetail/${competition.id}")
+                                        onNavigate("competitionConfig/${competition.id}")
                                     },
                         ) {
                             Text(
