@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.sportsorganizer.data.local.daos.UserDao
 import com.example.sportsorganizer.data.local.entities.User
 import com.example.sportsorganizer.data.local.session.SessionManager
+import com.example.sportsorganizer.utils.PasswordHashing
 
 class AuthRepository(
     private val userDao: UserDao,
@@ -16,7 +17,7 @@ class AuthRepository(
         password: String,
     ): kotlin.Result<User> {
         val user = userDao.findByUsername(username)
-        return if (user != null && user.password == password) {
+        return if (user != null && PasswordHashing.verifyPassword(password, user.password)) {
             sessionManager.saveLoggedInUserId(user.id)
             kotlin.Result.success(user)
         } else {

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.sportsorganizer.data.local.daos.UserDao
 import com.example.sportsorganizer.data.local.entities.User
+import com.example.sportsorganizer.utils.PasswordHashing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +48,7 @@ class CreateUserViewModel(
                         firstName = firstName,
                         lastName = lastName,
                         username = username,
-                        password = password,
+                        password = PasswordHashing.hashPassword(password),
                     )
                 userDao.insertAll(user)
                 _creationResult.value = CreationResult.Success(newUserId)
