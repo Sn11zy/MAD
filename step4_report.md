@@ -14,7 +14,6 @@ Unit tests are used for validating business logic that does not require an Andro
 -   **Method**: Tests should be written to verify that the `hashPassword` and `verifyPassword` functions work as expected. This includes:
     -   Verifying that a correct password matches its hash.
     -   Ensuring an incorrect password does not match.
-    -   Testing edge cases like empty strings.
 
 ### Instrumentation Tests
 
