@@ -29,15 +29,9 @@ Instrumentation tests are used for testing UI interactions and components that r
 
 Building a signed APK for release on the Google Play Store is done using standard Gradle tasks.
 
-1.  **Generate a Signing Key**: First, a private signing key must be generated using the `keytool` command. This key is used to sign the application and must be kept private.
+1.  **Generate a Signing Key**: First, a private signing key must be generated using the tutorial: https://developer.android.com/studio/publish/app-signing#sign-apk . This key is used to sign the application and must be kept private.
 
-2.  **Configure Gradle**: The app-level `build.gradle.kts` file must be configured to use the signing key. This typically involves storing the key's credentials securely in the `gradle.properties` file and creating a `signingConfigs` block.
-
-3.  **Build the APK**: With the signing configuration in place, the release APK can be built by running the following command in the project's root directory:
-    ```bash
-    ./gradlew assembleRelease
-    ```
-    The signed APK will be located in `MAD/app/build/outputs/apk/release/`.
+2.  **Build the APK**: With the signing configuration in place, the release APK will be built automatically in the andorid studio under the 'app/release' folder.
 
 ## 3. Known Bugs and Limitations
 
