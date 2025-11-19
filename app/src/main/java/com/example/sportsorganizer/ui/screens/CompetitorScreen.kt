@@ -28,10 +28,19 @@ import androidx.compose.ui.unit.dp
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompetitorScreen(onUpPress: () -> Unit) {
+    var competitionId by remember { mutableStateOf("") }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -63,6 +72,13 @@ fun CompetitorScreen(onUpPress: () -> Unit) {
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            OutlinedTextField(
+                value = competitionId,
+                onValueChange = { competitionId = it },
+                label = { Text(stringResource(id = R.string.competition_id_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
         }
     }
 }

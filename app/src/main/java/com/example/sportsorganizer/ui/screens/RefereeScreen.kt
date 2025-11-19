@@ -26,10 +26,23 @@ import androidx.compose.ui.unit.dp
 import com.example.sportsorganizer.R
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RefereeScreen(onUpPress: () -> Unit) {
+    var competitionId by remember { mutableStateOf("") }
+    var competitionPassword by remember { mutableStateOf("") }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -61,6 +74,24 @@ fun RefereeScreen(onUpPress: () -> Unit) {
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            OutlinedTextField(
+                value = competitionId,
+                onValueChange = { competitionId = it },
+                label = { Text(stringResource(id = R.string.competition_id_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = competitionPassword,
+                onValueChange = { competitionPassword = it },
+                label = { Text(stringResource(id = R.string.competition_password_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true
+            )
         }
     }
 }

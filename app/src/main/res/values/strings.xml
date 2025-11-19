@@ -20,5 +20,7 @@
     <string name="competition_title">Competition</string>
 
     <string name="add_competition_title">Create Competition</string>
+    <string name="competition_id_label">Competition ID</string>
+    <string name="competition_password_label">Competition Password</string>
 </resources>
     
