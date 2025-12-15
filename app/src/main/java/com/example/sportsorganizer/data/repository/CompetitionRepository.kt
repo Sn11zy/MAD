@@ -55,6 +55,22 @@ class CompetitionRepository {
         }
     }
 
+    suspend fun updateTeams(teams: List<Team>) {
+        withContext(Dispatchers.IO) {
+            // Using loop + update instead of upsert to avoid "cannot insert non-DEFAULT id" issues
+            teams.forEach { team ->
+                // Create a map of fields to update, EXCLUDING the ID
+                val updateData = mapOf("team_name" to team.teamName)
+                
+                client.from("teams").update(updateData) {
+                    filter {
+                        eq("id", team.id)
+                    }
+                }
+            }
+        }
+    }
+
     suspend fun getTeamsForCompetition(competitionId: Long): List<Team> {
         return withContext(Dispatchers.IO) {
             client.from("teams").select {

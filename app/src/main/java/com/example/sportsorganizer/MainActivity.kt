@@ -22,6 +22,7 @@ import com.example.sportsorganizer.ui.screens.CompetitorScreen
 import com.example.sportsorganizer.ui.screens.HomeScreen
 import com.example.sportsorganizer.ui.screens.OrganizeScreen
 import com.example.sportsorganizer.ui.screens.RefereeScreen
+import com.example.sportsorganizer.ui.screens.TeamNamingScreen
 import com.example.sportsorganizer.ui.screens.UserScreen
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 import com.example.sportsorganizer.ui.viewmodel.ThemeViewModel
@@ -95,6 +96,19 @@ class MainActivity : ComponentActivity() {
                                     onUpPress = { navController.navigateUp() },
                                     competitionId = competitionId,
                                     competitionRepository = competitionRepository,
+                                )
+                            }
+                        }
+                        composable(
+                            "teamNaming/{competitionId}",
+                            arguments = listOf(navArgument("competitionId") { type = NavType.LongType }),
+                        ) { backStackEntry ->
+                            val competitionId = backStackEntry.arguments?.getLong("competitionId")
+                            if (competitionId != null) {
+                                TeamNamingScreen(
+                                    competitionId = competitionId,
+                                    competitionRepository = competitionRepository,
+                                    onConfirm = { navController.navigate("home") } // Or to detail
                                 )
                             }
                         }

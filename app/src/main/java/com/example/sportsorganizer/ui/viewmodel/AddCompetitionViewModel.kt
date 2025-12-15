@@ -130,7 +130,7 @@ class AddCompetitionViewModel(
                     userId = userId,
                     latitude = city.latitude,
                     longitude = city.longitude,
-                    date = eventDate, // Using 'date' as creation date or event date
+                    date = eventDate,
                     refereePassword = refereePassword,
                     competitionPassword = competitionPassword,
                     startDate = startDate,
@@ -147,22 +147,15 @@ class AddCompetitionViewModel(
                 if (createdCompetition != null) {
                     val competitionId = createdCompetition.id
                     
-                    // 2. Generate and Insert Teams
+                    // 2. Generate and Insert Teams (Placeholders)
                     val teams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
-                    val insertedTeams = competitionRepository.createTeams(teams)
+                    competitionRepository.createTeams(teams)
                     
-                    // 3. Generate and Insert Matches
-                    val matches = MatchGenerator.generateMatches(
-                        competitionId = competitionId,
-                        teams = insertedTeams,
-                        tournamentMode = tournamentMode,
-                        fieldCount = fieldCount
-                    )
-                    competitionRepository.createMatches(matches)
+                    // NOTE: Match generation is now deferred to TeamNamingScreen
 
                     withContext(Dispatchers.Main) {
                         _creationResult.value = CreationResult.Success(competitionId)
-                        fetchCompetitions() // Refresh list
+                        fetchCompetitions()
                     }
                 } else {
                      withContext(Dispatchers.Main) {

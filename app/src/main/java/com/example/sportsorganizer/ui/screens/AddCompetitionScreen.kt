@@ -18,6 +18,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -138,7 +139,7 @@ fun OrganizeScreen(
                             onValueChange = { viewModel.onSearchQueryChanged(it) },
                             label = { Text("City") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                         )
                         ExposedDropdownMenu(
                             expanded = expanded,
@@ -177,7 +178,7 @@ fun OrganizeScreen(
                             readOnly = true,
                             label = { Text("Scoring Type") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isScoringExpanded) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                         )
                         ExposedDropdownMenu(
                             expanded = isScoringExpanded,
@@ -210,7 +211,7 @@ fun OrganizeScreen(
                             readOnly = true,
                             label = { Text("Tournament Mode") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModeExpanded) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                         )
                         ExposedDropdownMenu(
                             expanded = isModeExpanded,
@@ -276,7 +277,7 @@ fun OrganizeScreen(
                                     .padding(8.dp)
                                     .fillMaxWidth()
                                     .clickable {
-                                        onNavigate("competitionDetail/${competition.id}")
+                                        onNavigate("teamNaming/${competition.id}")
                                     },
                         ) {
                             Text(
@@ -292,9 +293,10 @@ fun OrganizeScreen(
         LaunchedEffect(result) {
             when (result) {
                 is AddCompetitionViewModel.CreationResult.Success -> {
-                    Toast.makeText(context, "Competition created", Toast.LENGTH_SHORT).show()
+                    val id = (result as AddCompetitionViewModel.CreationResult.Success).competitionId
+                    onNavigate("teamNaming/$id")
+                    // Reset fields
                     name = ""
-                    // Clear fields logic could be improved here by resetting all state vars
                 }
                 is AddCompetitionViewModel.CreationResult.Error -> {
                     val msg = (result as AddCompetitionViewModel.CreationResult.Error).message
