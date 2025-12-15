@@ -19,5 +19,7 @@ data class Competition(
     @SerialName("field_count") val fieldCount: Int?,
     @SerialName("scoring_type") val scoringType: String?, // 'time' or 'points'
     @SerialName("number_of_teams") val numberOfTeams: Int?,
-    @SerialName("tournament_mode") val tournamentMode: String? // 'knockout', 'group', 'combined'
+    @SerialName("tournament_mode") val tournamentMode: String?, // 'knockout', 'group', 'combined'
+    @SerialName("game_duration") val gameDuration: Int? = null,
+    @SerialName("winning_score") val winningScore: Int? = null
 )

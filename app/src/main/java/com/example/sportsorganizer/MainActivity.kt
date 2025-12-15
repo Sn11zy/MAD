@@ -65,9 +65,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("referee") {
-                            RefereeScreen(onUpPress = {
-                                navController.navigateUp()
-                            })
+                            RefereeScreen(
+                                onUpPress = {
+                                    navController.navigateUp()
+                                },
+                                repository = competitionRepository
+                            )
                         }
                         composable("competitor") {
                             CompetitorScreen(
@@ -96,6 +99,7 @@ class MainActivity : ComponentActivity() {
                                     onUpPress = { navController.navigateUp() },
                                     competitionId = competitionId,
                                     competitionRepository = competitionRepository,
+                                    onNavigate = { route -> navController.navigate(route) }
                                 )
                             }
                         }

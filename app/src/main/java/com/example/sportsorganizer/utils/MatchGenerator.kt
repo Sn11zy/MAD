@@ -18,33 +18,66 @@ object MatchGenerator {
         return teams
     }
 
-    // This returns matches. It requires the actual Team objects (with IDs) 
-    // so we can link them. This means we must insert teams FIRST, get their IDs, 
-    // and then call this.
     fun generateMatches(
         competitionId: Long,
         teams: List<Team>,
         tournamentMode: String,
         fieldCount: Int
     ): List<Match> {
-        val matches = mutableListOf<Match>()
-        
-        // Simple Round Robin implementation for now
-        // For 'knockout', we'd need a bracket structure which is more complex
-        
-        // Basic Logic: Pair every team with every other team (single round robin)
-        // Adjust for field count is just for scheduling, which we can skip for now or assign simple integers
-        
-        val teamIds = teams.map { it.id }
-        if (teamIds.size < 2) return emptyList()
+        // Filter out teams without valid IDs just in case
+        val validTeams = teams.filter { it.id != 0L }
+        if (validTeams.size < 2) return emptyList()
 
+        return when (tournamentMode) {
+            "Knockout" -> generateKnockoutMatches(competitionId, validTeams, fieldCount)
+            "Group Stage" -> generateRoundRobinMatches(competitionId, validTeams, fieldCount)
+            "Combined" -> generateRoundRobinMatches(competitionId, validTeams, fieldCount) // Stage 1
+            else -> generateRoundRobinMatches(competitionId, validTeams, fieldCount) // Default
+        }
+    }
+
+    private fun generateKnockoutMatches(
+        competitionId: Long,
+        teams: List<Team>,
+        fieldCount: Int
+    ): List<Match> {
+        val matches = mutableListOf<Match>()
+        val teamIds = teams.map { it.id }
+        
+        // Simple pairing for Round 1
+        // 0 vs 1, 2 vs 3, etc.
+        var matchCounter = 0
+        for (i in 0 until teamIds.size step 2) {
+            if (i + 1 < teamIds.size) {
+                val field = (matchCounter % fieldCount) + 1
+                matches.add(
+                    Match(
+                        competitionId = competitionId,
+                        fieldNumber = field,
+                        team1Id = teamIds[i],
+                        team2Id = teamIds[i + 1],
+                        status = "scheduled"
+                    )
+                )
+                matchCounter++
+            }
+            // If teams.size is odd, the last team (teamIds[i]) gets a Bye (no match generated)
+        }
+        return matches
+    }
+
+    private fun generateRoundRobinMatches(
+        competitionId: Long,
+        teams: List<Team>,
+        fieldCount: Int
+    ): List<Match> {
+        val matches = mutableListOf<Match>()
+        val teamIds = teams.map { it.id }
         var matchCounter = 0
 
         for (i in teamIds.indices) {
             for (j in i + 1 until teamIds.size) {
-                // Determine field number (simple round robin assignment)
                 val field = (matchCounter % fieldCount) + 1
-                
                 matches.add(
                     Match(
                         competitionId = competitionId,
@@ -60,4 +93,3 @@ object MatchGenerator {
         return matches
     }
 }
-

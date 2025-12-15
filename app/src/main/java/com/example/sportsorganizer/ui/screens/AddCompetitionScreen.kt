@@ -277,7 +277,7 @@ fun OrganizeScreen(
                                     .padding(8.dp)
                                     .fillMaxWidth()
                                     .clickable {
-                                        onNavigate("teamNaming/${competition.id}")
+                                        onNavigate("competitionDetail/${competition.id}")
                                     },
                         ) {
                             Text(

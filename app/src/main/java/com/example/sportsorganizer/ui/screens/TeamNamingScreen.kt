@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +27,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.sportsorganizer.data.local.entities.Competition
 import com.example.sportsorganizer.data.local.entities.Team
 import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.utils.MatchGenerator
@@ -41,6 +44,11 @@ fun TeamNamingScreen(
 ) {
     val teams = remember { mutableStateListOf<Team>() }
     val isLoading = remember { mutableStateOf(true) }
+    val competition = remember { mutableStateOf<Competition?>(null) }
+    
+    // Configuration states
+    val configValue = remember { mutableStateOf("") }
+    
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -49,8 +57,20 @@ fun TeamNamingScreen(
             val fetchedTeams = competitionRepository.getTeamsForCompetition(competitionId)
             teams.clear()
             teams.addAll(fetchedTeams)
+            
+            val fetchedCompetition = competitionRepository.getCompetitionById(competitionId)
+            competition.value = fetchedCompetition
+            
+            // Pre-fill if exists
+            if (fetchedCompetition != null) {
+                if (fetchedCompetition.scoringType == "Points") {
+                    configValue.value = fetchedCompetition.winningScore?.toString() ?: ""
+                } else if (fetchedCompetition.scoringType == "Time") {
+                    configValue.value = fetchedCompetition.gameDuration?.toString() ?: ""
+                }
+            }
         } catch (e: Exception) {
-            Toast.makeText(context, "Error fetching teams: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Error fetching data: ${e.message}", Toast.LENGTH_SHORT).show()
         } finally {
             isLoading.value = false
         }
@@ -59,7 +79,7 @@ fun TeamNamingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Name Your Teams") },
+                title = { Text("Finalize Configuration") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -82,6 +102,29 @@ fun TeamNamingScreen(
                     .padding(innerPadding)
                     .padding(16.dp)
             ) {
+                // Configuration Section
+                competition.value?.let { comp ->
+                    Text("Game Rules", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    if (comp.scoringType == "Points") {
+                        OutlinedTextField(
+                            value = configValue.value,
+                            onValueChange = { configValue.value = it },
+                            label = { Text("Winning Score (e.g. 21)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        )
+                    } else if (comp.scoringType == "Time") {
+                        OutlinedTextField(
+                            value = configValue.value,
+                            onValueChange = { configValue.value = it },
+                            label = { Text("Game Duration (minutes)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        )
+                    }
+                }
+
+                Text("Team Names", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -102,18 +145,26 @@ fun TeamNamingScreen(
                         scope.launch {
                             isLoading.value = true
                             try {
-                                // 1. Update teams in DB
+                                // 1. Update teams
                                 competitionRepository.updateTeams(teams)
                                 
-                                // 2. Fetch competition to get mode/field count
-                                val competition = competitionRepository.getCompetitionById(competitionId)
-                                if (competition != null) {
+                                // 2. Update Competition Config
+                                val comp = competition.value
+                                if (comp != null) {
+                                    val value = configValue.value.toIntOrNull()
+                                    val updatedComp = if (comp.scoringType == "Points") {
+                                        comp.copy(winningScore = value)
+                                    } else {
+                                        comp.copy(gameDuration = value)
+                                    }
+                                    competitionRepository.updateCompetition(updatedComp)
+                                    
                                     // 3. Generate matches
                                     val matches = MatchGenerator.generateMatches(
                                         competitionId = competitionId,
                                         teams = teams,
-                                        tournamentMode = competition.tournamentMode ?: "Knockout",
-                                        fieldCount = competition.fieldCount ?: 1
+                                        tournamentMode = comp.tournamentMode ?: "Knockout",
+                                        fieldCount = comp.fieldCount ?: 1
                                     )
                                     competitionRepository.createMatches(matches)
                                     Toast.makeText(context, "Teams updated & matches generated!", Toast.LENGTH_SHORT).show()
