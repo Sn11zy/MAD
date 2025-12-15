@@ -50,7 +50,6 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onNavigate = { route -> navController.navigate(route) },
                                 onToggleTheme = { themeViewModel.toggleTheme() },
-                                competitionRepository = competitionRepository
                             )
                         }
                         composable(
@@ -69,7 +68,7 @@ class MainActivity : ComponentActivity() {
                                 onUpPress = {
                                     navController.navigateUp()
                                 },
-                                repository = competitionRepository
+                                repository = competitionRepository,
                             )
                         }
                         composable("competitor") {
@@ -86,7 +85,7 @@ class MainActivity : ComponentActivity() {
                         composable("user") {
                             UserScreen(
                                 onUpPress = { navController.navigateUp() },
-                                userRepository = userRepository
+                                userRepository = userRepository,
                             )
                         }
                         composable(
@@ -99,7 +98,7 @@ class MainActivity : ComponentActivity() {
                                     onUpPress = { navController.navigateUp() },
                                     competitionId = competitionId,
                                     competitionRepository = competitionRepository,
-                                    onNavigate = { route -> navController.navigate(route) }
+                                    onNavigate = { route -> navController.navigate(route) },
                                 )
                             }
                         }
@@ -112,7 +111,7 @@ class MainActivity : ComponentActivity() {
                                 TeamNamingScreen(
                                     competitionId = competitionId,
                                     competitionRepository = competitionRepository,
-                                    onConfirm = { navController.navigate("home") } // Or to detail
+                                    onConfirm = { navController.navigate("home") }, // Or to detail
                                 )
                             }
                         }
