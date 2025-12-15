@@ -8,7 +8,6 @@ import com.example.sportsorganizer.data.local.entities.Match
 import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.utils.StandingsCalculator
 import com.example.sportsorganizer.utils.TeamStats
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +18,7 @@ sealed class CompetitorUiState {
     object Loading : CompetitorUiState()
     data class Success(
         val competition: Competition,
-        val standings: List<TeamStats>,
+        val standings: Map<String, List<TeamStats>>, // Changed to Map<GroupName, Stats>
         val matches: List<Match>,
         val teamNames: Map<Long, String>
     ) : CompetitorUiState()
@@ -81,12 +80,23 @@ class CompetitorViewModel(private val repository: CompetitionRepository) : ViewM
             // Map team IDs to names
             val teamNames = teams.associate { it.id to it.teamName }
             
-            // Calculate standings
-            val teamIds = teams.map { it.id }
-            val standings = StandingsCalculator.calculateStandings(matches, teamIds)
+            // Calculate standings by group
+            val groupMatches = matches.filter { it.stage?.startsWith("Group") == true }
+            val standingsByGroup = mutableMapOf<String, List<TeamStats>>()
+            
+            val teamsByGroup = teams.groupBy { it.groupName ?: "General" }
+            
+            teamsByGroup.forEach { (groupName, groupTeams) ->
+                val teamIds = groupTeams.map { it.id }
+                val groupStandings = StandingsCalculator.calculateStandings(groupMatches, teamIds)
+                standingsByGroup[groupName] = groupStandings
+            }
             
             // Sort matches: In Progress, Scheduled, Finished
-             val sortedMatches = matches.sortedWith(
+            // Filter future matches where no teams are assigned yet
+            val activeMatches = matches.filter { it.team1Id != null || it.team2Id != null }
+            
+             val sortedMatches = activeMatches.sortedWith(
                 compareBy<Match> { 
                     when (it.status) {
                         "in_progress" -> 0
@@ -98,7 +108,7 @@ class CompetitorViewModel(private val repository: CompetitionRepository) : ViewM
 
             _uiState.value = CompetitorUiState.Success(
                 competition = competition,
-                standings = standings,
+                standings = standingsByGroup,
                 matches = sortedMatches,
                 teamNames = teamNames
             )

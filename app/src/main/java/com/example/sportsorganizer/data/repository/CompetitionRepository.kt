@@ -4,6 +4,8 @@ import com.example.sportsorganizer.data.local.entities.Competition
 import com.example.sportsorganizer.data.local.entities.Match
 import com.example.sportsorganizer.data.local.entities.Team
 import com.example.sportsorganizer.data.remote.SupabaseModule
+import com.example.sportsorganizer.utils.MatchGenerator
+import com.example.sportsorganizer.utils.StandingsCalculator
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -113,6 +115,14 @@ class CompetitionRepository {
             client.from("matches").insert(matches)
         }
     }
+    
+    suspend fun createMatch(match: Match): Match? {
+        return withContext(Dispatchers.IO) {
+            client.from("matches").insert(match) {
+                select()
+            }.decodeSingleOrNull<Match>()
+        }
+    }
 
     suspend fun getMatchesForCompetition(competitionId: Long): List<Match> {
         return withContext(Dispatchers.IO) {
@@ -134,6 +144,16 @@ class CompetitionRepository {
             }.decodeList<Match>()
         }
     }
+    
+    suspend fun getMatchById(id: Long): Match? {
+        return withContext(Dispatchers.IO) {
+            client.from("matches").select {
+                filter {
+                    eq("id", id)
+                }
+            }.decodeSingleOrNull<Match>()
+        }
+    }
 
     suspend fun updateMatch(match: Match) {
         withContext(Dispatchers.IO) {
@@ -142,12 +162,42 @@ class CompetitionRepository {
                 put("score2", match.score2)
                 put("status", match.status)
                 match.stage?.let { put("stage", it) }
+                match.team1Id?.let { put("team1_id", it) }
+                match.team2Id?.let { put("team2_id", it) }
+                match.nextMatchId?.let { put("next_match_id", it) }
             }
             client.from("matches").update(updateData) {
                 filter {
                     eq("id", match.id)
                 }
             }
+        }
+    }
+    
+    suspend fun generateKnockoutStage(competitionId: Long) {
+        val teams = getTeamsForCompetition(competitionId)
+        val matches = getMatchesForCompetition(competitionId)
+        val competition = getCompetitionById(competitionId) ?: return
+        
+        // Check if already generated
+        if (matches.any { it.stage?.contains("Round") == true || it.stage?.contains("Semi") == true || it.stage?.contains("Final") == true }) return
+
+        val qualifiedTeams = mutableListOf<Team>()
+        
+        val groups = teams.groupBy { it.groupName ?: "Group A" }
+        val qualifiersPerGroup = competition.qualifiersPerGroup ?: 2
+        
+        groups.forEach { (_, groupTeams) ->
+            val groupMatches = matches.filter { it.stage?.startsWith("Group") == true }
+            val stats = StandingsCalculator.calculateStandings(groupMatches, groupTeams.map { it.id })
+            
+            val topStats = stats.take(qualifiersPerGroup)
+            val topTeamIds = topStats.map { it.teamId }
+            qualifiedTeams.addAll(teams.filter { it.id in topTeamIds })
+        }
+        
+        if (qualifiedTeams.isNotEmpty()) {
+            MatchGenerator.generateAndSaveKnockoutBracket(this, competitionId, qualifiedTeams, competition.fieldCount ?: 1)
         }
     }
 }

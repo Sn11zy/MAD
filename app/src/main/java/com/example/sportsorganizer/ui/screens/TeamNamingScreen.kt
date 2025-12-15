@@ -145,12 +145,15 @@ fun TeamNamingScreen(
                         scope.launch {
                             isLoading.value = true
                             try {
-                                // 1. Update teams
-                                competitionRepository.updateTeams(teams)
-                                
-                                // 2. Update Competition Config
+                                // 1. Update teams (Assign groups if needed)
                                 val comp = competition.value
                                 if (comp != null) {
+                                    // Assign groups if needed
+                                    val numberOfGroups = comp.numberOfGroups ?: 1
+                                    val assignedTeams = MatchGenerator.assignGroups(teams, numberOfGroups)
+                                    competitionRepository.updateTeams(assignedTeams)
+                                    
+                                    // 2. Update Competition Config
                                     val value = configValue.value.toIntOrNull()
                                     val updatedComp = if (comp.scoringType == "Points") {
                                         comp.copy(winningScore = value)
@@ -160,13 +163,24 @@ fun TeamNamingScreen(
                                     competitionRepository.updateCompetition(updatedComp)
                                     
                                     // 3. Generate matches
-                                    val matches = MatchGenerator.generateMatches(
-                                        competitionId = competitionId,
-                                        teams = teams,
-                                        tournamentMode = comp.tournamentMode ?: "Knockout",
-                                        fieldCount = comp.fieldCount ?: 1
-                                    )
-                                    competitionRepository.createMatches(matches)
+                                    if (comp.tournamentMode == "Knockout") {
+                                        MatchGenerator.generateAndSaveKnockoutBracket(
+                                            repo = competitionRepository,
+                                            competitionId = competitionId,
+                                            teams = assignedTeams,
+                                            fieldCount = comp.fieldCount ?: 1
+                                        )
+                                    } else {
+                                        val matches = MatchGenerator.generateMatches(
+                                            competitionId = competitionId,
+                                            teams = assignedTeams,
+                                            tournamentMode = comp.tournamentMode ?: "Group Stage",
+                                            fieldCount = comp.fieldCount ?: 1,
+                                            numberOfGroups = numberOfGroups
+                                        )
+                                        competitionRepository.createMatches(matches)
+                                    }
+                                    
                                     Toast.makeText(context, "Teams updated & matches generated!", Toast.LENGTH_SHORT).show()
                                     onConfirm()
                                 }

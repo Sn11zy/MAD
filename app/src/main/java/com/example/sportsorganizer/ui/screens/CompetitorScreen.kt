@@ -1,7 +1,7 @@
 package com.example.sportsorganizer.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -164,7 +166,16 @@ fun CompetitorLoginContent(error: String?, onLogin: (String) -> Unit) {
 @Composable
 fun CompetitorDashboard(state: CompetitorUiState.Success) {
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Matches", "Standings")
+    
+    // Determine tabs based on mode
+    val tabs = mutableListOf("Matches")
+    val mode = state.competition.tournamentMode
+    if (mode == "Group Stage" || mode == "Combined") {
+        tabs.add("Standings")
+    }
+    if (mode == "Knockout" || mode == "Combined") {
+        tabs.add("Bracket")
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = selectedTab) {
@@ -177,9 +188,103 @@ fun CompetitorDashboard(state: CompetitorUiState.Success) {
             }
         }
 
-        when (selectedTab) {
-            0 -> MatchesList(state.matches, state.teamNames)
-            1 -> StandingsTable(state.standings, state.teamNames)
+        val selectedTitle = tabs.getOrNull(selectedTab) ?: "Matches"
+        
+        when (selectedTitle) {
+            "Matches" -> MatchesList(state.matches, state.teamNames)
+            "Standings" -> StandingsTable(state.standings, state.teamNames)
+            "Bracket" -> BracketView(state.matches, state.teamNames)
+        }
+    }
+}
+
+@Composable
+fun BracketView(matches: List<Match>, teamNames: Map<Long, String>) {
+    // 1. Filter bracket matches (Knockout stages)
+    val bracketMatches = matches.filter { 
+        it.stage != null && !it.stage.startsWith("Group")
+    }
+    
+    if (bracketMatches.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No bracket matches generated yet.")
+        }
+        return
+    }
+
+    // 2. Group by Stage
+    val rounds = bracketMatches.groupBy { it.stage!! }
+    
+    // 3. Sort Rounds: Round 1 < Round 2 < ... < Quarter < Semi < Final
+    val sortedStages = rounds.keys.sortedWith(
+        compareBy { stage ->
+            when {
+                stage.startsWith("Round") -> {
+                    stage.removePrefix("Round ").trim().toIntOrNull() ?: 0
+                }
+                stage.contains("Quarter", ignoreCase = true) -> 98
+                stage.contains("Semi", ignoreCase = true) -> 99
+                stage.contains("Final", ignoreCase = true) -> 100
+                else -> 0
+            }
+        }
+    )
+
+    LazyRow(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        items(sortedStages) { stageName ->
+            val roundMatches = rounds[stageName] ?: emptyList()
+            
+            Column(
+                modifier = Modifier
+                    .width(280.dp)
+                    .fillMaxSize(), // Height fills screen
+                verticalArrangement = Arrangement.Center // Center matches vertically
+            ) {
+                Text(
+                    text = stageName,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp).align(Alignment.CenterHorizontally)
+                )
+                
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(32.dp),
+                    modifier = Modifier.weight(1f) // Let column scroll if needed
+                ) {
+                    items(roundMatches) { match ->
+                        BracketMatchCard(match, teamNames)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BracketMatchCard(match: Match, teamNames: Map<Long, String>) {
+    val team1 = teamNames[match.team1Id] ?: "TBD"
+    val team2 = teamNames[match.team2Id] ?: "TBD"
+    
+    Card(
+        modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray, MaterialTheme.shapes.medium),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(team1, fontWeight = if (match.score1 > match.score2 && match.status == "finished") FontWeight.Bold else FontWeight.Normal)
+                Text("${match.score1}")
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(team2, fontWeight = if (match.score2 > match.score1 && match.status == "finished") FontWeight.Bold else FontWeight.Normal)
+                Text("${match.score2}")
+            }
+            if (match.status == "in_progress") {
+                Text("LIVE", color = Color.Red, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
+            }
         }
     }
 }
@@ -323,30 +428,42 @@ fun MatchesList(matches: List<Match>, teamNames: Map<Long, String>) {
 }
 
 @Composable
-fun StandingsTable(standings: List<TeamStats>, teamNames: Map<Long, String>) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(8.dp)
-        ) {
-            Text("#", modifier = Modifier.width(30.dp), fontWeight = FontWeight.Bold)
-            Text("Team", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-            Text("P", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-            Text("W", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-            Text("D", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-            Text("L", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-            Text("Pts", modifier = Modifier.width(40.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-        }
-        
-        LazyColumn {
-            itemsIndexed(standings) { index, stats ->
+fun StandingsTable(standings: Map<String, List<TeamStats>>, teamNames: Map<Long, String>) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        standings.forEach { (groupName, groupStandings) ->
+            item {
+                Text(
+                    text = groupName,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            
+            item {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(8.dp)
+                ) {
+                    Text("#", modifier = Modifier.width(30.dp), fontWeight = FontWeight.Bold)
+                    Text("Team", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Text("P", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                    Text("W", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                    Text("D", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                    Text("L", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                    Text("Pts", modifier = Modifier.width(40.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                }
+            }
+            
+            itemsIndexed(groupStandings) { index, stats ->
                 val teamName = teamNames[stats.teamId] ?: "Team ${stats.teamId}"
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                         .padding(8.dp)
                 ) {
                     Text("${index + 1}", modifier = Modifier.width(30.dp))
@@ -357,6 +474,10 @@ fun StandingsTable(standings: List<TeamStats>, teamNames: Map<Long, String>) {
                     Text("${stats.lost}", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center)
                     Text("${stats.points}", modifier = Modifier.width(40.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
                 }
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

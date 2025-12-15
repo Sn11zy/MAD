@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +45,7 @@ import com.example.sportsorganizer.data.repository.WeatherRepository
 import com.example.sportsorganizer.ui.viewmodel.UiState
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModel
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModelFactory
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("ktlint:standard:function-naming")
@@ -54,6 +56,7 @@ fun CompetitionDetailScreen(
     competitionRepository: CompetitionRepository,
     onNavigate: (String) -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     val competition by produceState<Competition?>(initialValue = null, key1 = competitionId) {
         value = competitionRepository.getCompetitionById(competitionId)
     }
@@ -66,9 +69,11 @@ fun CompetitionDetailScreen(
     LaunchedEffect(competitionId) {
         try {
             val fetchedMatches = competitionRepository.getMatchesForCompetition(competitionId)
+            matches.clear()
             matches.addAll(fetchedMatches)
             
             val fetchedTeams = competitionRepository.getTeamsForCompetition(competitionId)
+            teams.clear()
             teams.addAll(fetchedTeams)
         } catch (e: Exception) {
             // Handle error silently or log
@@ -158,26 +163,56 @@ fun CompetitionDetailScreen(
                 ) {
                     Text("Edit Teams & Configuration")
                 }
+                
+                // Combined Mode Logic: Generate Knockout Button
+                if (currentCompetition.tournamentMode == "Combined") {
+                    val hasKnockout = matches.any { it.stage?.contains("Round") == true || it.stage?.contains("Semi") == true || it.stage?.contains("Final") == true }
+                    if (!hasKnockout) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    try {
+                                        competitionRepository.generateKnockoutStage(competitionId)
+                                        // Refresh matches
+                                        val newMatches = competitionRepository.getMatchesForCompetition(competitionId)
+                                        matches.clear()
+                                        matches.addAll(newMatches)
+                                    } catch (e: Exception) {
+                                        // Toast or log if context available, else just fail silently
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Generate Knockout Stage")
+                        }
+                    }
+                }
 
                 Text("Matches", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.Start))
 
+                val visibleMatches = matches.filter { it.team1Id != null || it.team2Id != null }
+
                 if (isLoadingData.value) {
                     CircularProgressIndicator()
-                } else if (matches.isEmpty()) {
+                } else if (visibleMatches.isEmpty()) {
                     Text("No matches generated yet.")
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(matches) { match ->
-                            val team1 = teams.find { it.id == match.team1Id }?.teamName ?: "Unknown"
-                            val team2 = teams.find { it.id == match.team2Id }?.teamName ?: "Unknown"
+                        items(visibleMatches) { match ->
+                            val team1 = teams.find { it.id == match.team1Id }?.teamName ?: "TBD"
+                            val team2 = teams.find { it.id == match.team2Id }?.teamName ?: "TBD"
                             
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("Field ${match.fieldNumber}: $team1 vs $team2")
+                                    Text("Field ${match.fieldNumber ?: "-"}: $team1 vs $team2")
                                     Text("Status: ${match.status}", style = MaterialTheme.typography.bodySmall)
+                                    if (match.stage != null) {
+                                        Text(match.stage, style = MaterialTheme.typography.bodySmall)
+                                    }
                                 }
                             }
                         }

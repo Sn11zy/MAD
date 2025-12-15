@@ -85,8 +85,11 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
         viewModelScope.launch {
             try {
                 val fetchedMatches = repository.getMatchesForField(competitionId, fieldNumber)
+                // Filter future matches where no teams are assigned yet
+                val activeMatches = fetchedMatches.filter { it.team1Id != null || it.team2Id != null }
+                
                 // Sort matches: In Progress (0), Scheduled (1), Finished (2)
-                _matches.value = fetchedMatches.sortedWith(
+                _matches.value = activeMatches.sortedWith(
                     compareBy<Match> { 
                             when (it.status) {
                                 "in_progress" -> 0
@@ -113,7 +116,6 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
                  repository.updateMatch(updatedMatch)
             } catch (e: Exception) {
                 _error.value = "Failed to update score: ${e.message}"
-                // Revert optimistic update? For now just show error.
             }
         }
     }
@@ -125,6 +127,11 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
                 _matches.value = _matches.value.map { if (it.id == match.id) updatedMatch else it }
                 repository.updateMatch(updatedMatch)
                 
+                // Handle Knockout Progression
+                if (newStatus == "finished" && updatedMatch.nextMatchId != null) {
+                    advanceWinner(updatedMatch)
+                }
+                
                 // If finished, refresh list order
                 val state = _loginState.value
                 val field = _selectedField.value
@@ -134,6 +141,34 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
             } catch (e: Exception) {
                 _error.value = "Failed to update status: ${e.message}"
             }
+        }
+    }
+    
+    private suspend fun advanceWinner(match: Match) {
+        try {
+            val winnerId = if (match.score1 > match.score2) match.team1Id else if (match.score2 > match.score1) match.team2Id else null
+            
+            if (winnerId != null && match.nextMatchId != null) {
+                val nextMatch = repository.getMatchById(match.nextMatchId)
+                if (nextMatch != null) {
+                    // Place winner in empty slot
+                    val updatedNextMatch = if (nextMatch.team1Id == null) {
+                        nextMatch.copy(team1Id = winnerId)
+                    } else if (nextMatch.team2Id == null) {
+                        nextMatch.copy(team2Id = winnerId)
+                    } else {
+                        // Both slots full? Maybe undo or override?
+                        // For simplicity, assume empty slots
+                        nextMatch
+                    }
+                    
+                    if (updatedNextMatch != nextMatch) {
+                        repository.updateMatch(updatedNextMatch)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            _error.value = "Failed to advance winner: ${e.message}"
         }
     }
 }
