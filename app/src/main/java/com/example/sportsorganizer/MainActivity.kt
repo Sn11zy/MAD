@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
                         composable("competitor") {
                             CompetitorScreen(
                                 onUpPress = { navController.navigateUp() },
+                                repository = competitionRepository
                             )
                         }
                         composable("about") {
