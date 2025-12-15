@@ -84,8 +84,8 @@ fun CompetitionDetailScreen(
 
     LaunchedEffect(competition) {
         competition?.let {
-            if (it.latitude != null && it.longitude != null && it.date != null) {
-                viewModel.fetchWeather(it.latitude, it.longitude, it.date)
+            if (it.latitude != null && it.longitude != null && it.eventDate != null) {
+                viewModel.fetchWeather(it.latitude, it.longitude, it.eventDate)
             }
         }
     }
@@ -127,9 +127,9 @@ fun CompetitionDetailScreen(
                 Text(text = currentCompetition.competitionName, style = MaterialTheme.typography.headlineMedium)
                 
                 // Weather Section
-                if (currentCompetition.latitude != null && currentCompetition.longitude != null && currentCompetition.date != null) {
+                if (currentCompetition.latitude != null && currentCompetition.longitude != null && currentCompetition.eventDate != null) {
                      Button(onClick = {
-                        viewModel.fetchWeather(currentCompetition.latitude, currentCompetition.longitude, currentCompetition.date)
+                        viewModel.fetchWeather(currentCompetition.latitude, currentCompetition.longitude, currentCompetition.eventDate)
                     }) {
                         Text("Refresh Weather")
                     }

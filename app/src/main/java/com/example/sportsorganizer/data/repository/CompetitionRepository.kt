@@ -43,6 +43,10 @@ class CompetitionRepository {
             val updateData = buildJsonObject {
                 competition.gameDuration?.let { put("game_duration", it) }
                 competition.winningScore?.let { put("winning_score", it) }
+                competition.numberOfGroups?.let { put("number_of_groups", it) }
+                competition.qualifiersPerGroup?.let { put("qualifiers_per_group", it) }
+                put("points_per_win", competition.pointsPerWin)
+                put("points_per_draw", competition.pointsPerDraw)
             }
             
             // Only update if there is data to update
@@ -79,9 +83,9 @@ class CompetitionRepository {
         withContext(Dispatchers.IO) {
             // Using loop + update instead of upsert to avoid "cannot insert non-DEFAULT id" issues
             teams.forEach { team ->
-                // buildJsonObject handles serialization properly
                 val updateData = buildJsonObject {
                     put("team_name", team.teamName)
+                    team.groupName?.let { put("group_name", it) }
                 }
                 
                 client.from("teams").update(updateData) {
@@ -137,6 +141,7 @@ class CompetitionRepository {
                 put("score1", match.score1)
                 put("score2", match.score2)
                 put("status", match.status)
+                match.stage?.let { put("stage", it) }
             }
             client.from("matches").update(updateData) {
                 filter {

@@ -7,6 +7,6 @@ import kotlinx.serialization.Serializable
 data class Team(
     val id: Long = 0,
     @SerialName("competition_id") val competitionId: Long,
-    @SerialName("team_name") val teamName: String
+    @SerialName("team_name") val teamName: String,
+    @SerialName("group_name") val groupName: String? = null
 )
-

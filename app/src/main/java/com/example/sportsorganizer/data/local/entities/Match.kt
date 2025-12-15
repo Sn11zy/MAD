@@ -12,7 +12,7 @@ data class Match(
     @SerialName("team2_id") val team2Id: Long?,
     val score1: Int = 0,
     val score2: Int = 0,
-    val status: String = "scheduled", // 'scheduled', 'ongoing', 'paused', 'finished'
-    @SerialName("start_time") val startTime: String? = null
+    val status: String = "scheduled", // 'scheduled', 'in_progress', 'finished'
+    @SerialName("start_time") val startTime: String? = null,
+    val stage: String? = null // e.g. "Group A", "Quarter-final"
 )
-

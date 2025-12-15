@@ -1,6 +1,7 @@
 package com.example.sportsorganizer.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,11 +18,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -181,52 +186,134 @@ fun CompetitorDashboard(state: CompetitorUiState.Success) {
 
 @Composable
 fun MatchesList(matches: List<Match>, teamNames: Map<Long, String>) {
-    if (matches.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No matches found.")
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedField by remember { mutableStateOf<Int?>(null) }
+    var showFieldDropdown by remember { mutableStateOf(false) }
+
+    // Get unique fields for dropdown
+    val availableFields = matches.mapNotNull { it.fieldNumber }.distinct().sorted()
+
+    // Filter Logic
+    val filteredMatches = matches.filter { match ->
+        val team1 = teamNames[match.team1Id] ?: ""
+        val team2 = teamNames[match.team2Id] ?: ""
+        
+        val matchesSearch = if (searchQuery.isBlank()) true else {
+            team1.contains(searchQuery, ignoreCase = true) || team2.contains(searchQuery, ignoreCase = true)
         }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        
+        val matchesField = if (selectedField == null) true else match.fieldNumber == selectedField
+        
+        matchesSearch && matchesField
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Filters Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(matches) { match ->
-                val team1Name = teamNames[match.team1Id] ?: "Team ${match.team1Id}"
-                val team2Name = teamNames[match.team2Id] ?: "Team ${match.team2Id}"
-                
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                             Text(
-                                text = when (match.status) {
-                                    "in_progress" -> "LIVE"
-                                    "finished" -> "FT"
-                                    else -> "Scheduled"
-                                },
-                                color = if (match.status == "in_progress") Color.Red else Color.Gray,
-                                fontWeight = FontWeight.Bold
-                            )
-                            if (match.fieldNumber != null) {
-                                Text("Field ${match.fieldNumber}", style = MaterialTheme.typography.bodySmall)
-                            }
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search Team") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, "Clear")
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(team1Name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                            Text(
-                                "${match.score1} - ${match.score2}",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            Text(team2Name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+                    }
+                }
+            )
+            
+            Box {
+                Button(onClick = { showFieldDropdown = true }) {
+                    Icon(Icons.Default.FilterList, "Filter Field")
+                    if (selectedField != null) {
+                        Text(" Field $selectedField")
+                    }
+                }
+                DropdownMenu(
+                    expanded = showFieldDropdown,
+                    onDismissRequest = { showFieldDropdown = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("All Fields") },
+                        onClick = {
+                            selectedField = null
+                            showFieldDropdown = false
+                        }
+                    )
+                    availableFields.forEach { field ->
+                        DropdownMenuItem(
+                            text = { Text("Field $field") },
+                            onClick = {
+                                selectedField = field
+                                showFieldDropdown = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        if (filteredMatches.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No matches found matching criteria.")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filteredMatches) { match ->
+                    val team1Name = teamNames[match.team1Id] ?: "Team ${match.team1Id}"
+                    val team2Name = teamNames[match.team2Id] ?: "Team ${match.team2Id}"
+                    
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                 Text(
+                                    text = when (match.status) {
+                                        "in_progress" -> "LIVE"
+                                        "finished" -> "FT"
+                                        else -> "Scheduled"
+                                    },
+                                    color = if (match.status == "in_progress") Color.Red else Color.Gray,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (match.fieldNumber != null) {
+                                    Text("Field ${match.fieldNumber}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(team1Name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                                Text(
+                                    "${match.score1} - ${match.score2}",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                                Text(team2Name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+                            }
+                            if (match.stage != null) {
+                                Text(match.stage, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                            }
                         }
                     }
                 }

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 class AddCompetitionViewModel(
     private val competitionRepository: CompetitionRepository,
@@ -103,7 +104,7 @@ class AddCompetitionViewModel(
     fun createCompetition(
         competitionName: String,
         userId: Long,
-        eventDate: String,
+        // eventDate removed, generated automatically
         refereePassword: String,
         competitionPassword: String,
         startDate: String,
@@ -112,7 +113,12 @@ class AddCompetitionViewModel(
         fieldCount: Int,
         scoringType: String,
         numberOfTeams: Int,
-        tournamentMode: String
+        tournamentMode: String,
+        // New params
+        numberOfGroups: Int?,
+        qualifiersPerGroup: Int?,
+        pointsPerWin: Int = 3,
+        pointsPerDraw: Int = 1
     ) {
         val city = _selectedCity.value
         if (city == null) {
@@ -124,13 +130,15 @@ class AddCompetitionViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val today = LocalDate.now().toString() // YYYY-MM-DD
+
                 // 1. Create Competition
                 val competition = Competition(
                     competitionName = competitionName,
                     userId = userId,
                     latitude = city.latitude,
                     longitude = city.longitude,
-                    date = eventDate,
+                    eventDate = today,
                     refereePassword = refereePassword,
                     competitionPassword = competitionPassword,
                     startDate = startDate,
@@ -139,7 +147,12 @@ class AddCompetitionViewModel(
                     fieldCount = fieldCount,
                     scoringType = scoringType,
                     numberOfTeams = numberOfTeams,
-                    tournamentMode = tournamentMode
+                    tournamentMode = tournamentMode,
+                    // New Fields
+                    numberOfGroups = numberOfGroups,
+                    qualifiersPerGroup = qualifiersPerGroup,
+                    pointsPerWin = pointsPerWin,
+                    pointsPerDraw = pointsPerDraw
                 )
                 
                 val createdCompetition = competitionRepository.createCompetition(competition)
@@ -151,8 +164,6 @@ class AddCompetitionViewModel(
                     val teams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
                     competitionRepository.createTeams(teams)
                     
-                    // NOTE: Match generation is now deferred to TeamNamingScreen
-
                     withContext(Dispatchers.Main) {
                         _creationResult.value = CreationResult.Success(competitionId)
                         fetchCompetitions()
