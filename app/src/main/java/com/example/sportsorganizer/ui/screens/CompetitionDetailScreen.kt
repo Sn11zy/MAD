@@ -1,5 +1,6 @@
 package com.example.sportsorganizer.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,6 +58,7 @@ fun CompetitionDetailScreen(
     competitionRepository: CompetitionRepository,
     onNavigate: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val competition by produceState<Competition?>(initialValue = null, key1 = competitionId) {
         value = competitionRepository.getCompetitionById(competitionId)
@@ -171,14 +174,23 @@ fun CompetitionDetailScreen(
                         Button(
                             onClick = {
                                 scope.launch {
+                                    Toast.makeText(context, "Generating Knockout Stage...", Toast.LENGTH_SHORT).show()
                                     try {
-                                        competitionRepository.generateKnockoutStage(competitionId)
+                                        val result = competitionRepository.generateKnockoutStage(competitionId)
                                         // Refresh matches
                                         val newMatches = competitionRepository.getMatchesForCompetition(competitionId)
                                         matches.clear()
                                         matches.addAll(newMatches)
+                                        
+                                        if (result > 0) {
+                                            Toast.makeText(context, "Knockout Stage Generated! ($result matches)", Toast.LENGTH_SHORT).show()
+                                        } else if (result == -1) {
+                                            Toast.makeText(context, "Knockout Stage already exists (refresh maybe?)", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "No matches generated (0 teams qualified?)", Toast.LENGTH_LONG).show()
+                                        }
                                     } catch (e: Exception) {
-                                        // Toast or log if context available, else just fail silently
+                                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },
@@ -186,6 +198,11 @@ fun CompetitionDetailScreen(
                         ) {
                             Text("Generate Knockout Stage")
                         }
+                    } else {
+                        Text("Knockout Stage Active", style = MaterialTheme.typography.labelSmall)
+                        // Debug info
+                        // val stages = matches.mapNotNull { it.stage }.distinct().joinToString()
+                        // Text("Stages: $stages", style = MaterialTheme.typography.bodySmall)
                     }
                 }
 

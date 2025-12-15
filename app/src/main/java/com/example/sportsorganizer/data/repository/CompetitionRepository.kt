@@ -174,30 +174,48 @@ class CompetitionRepository {
         }
     }
     
-    suspend fun generateKnockoutStage(competitionId: Long) {
+    suspend fun generateKnockoutStage(competitionId: Long): Int {
+        println("DEBUG: generateKnockoutStage called for $competitionId")
         val teams = getTeamsForCompetition(competitionId)
         val matches = getMatchesForCompetition(competitionId)
-        val competition = getCompetitionById(competitionId) ?: return
+        val competition = getCompetitionById(competitionId) ?: return 0
+        
+        println("DEBUG: Teams: ${teams.size}, Matches: ${matches.size}, Mode: ${competition.tournamentMode}")
         
         // Check if already generated
-        if (matches.any { it.stage?.contains("Round") == true || it.stage?.contains("Semi") == true || it.stage?.contains("Final") == true }) return
+        if (matches.any { it.stage?.contains("Round") == true || it.stage?.contains("Semi") == true || it.stage?.contains("Final") == true }) {
+            println("DEBUG: Knockout matches already exist.")
+            return -1
+        }
 
         val qualifiedTeams = mutableListOf<Team>()
         
         val groups = teams.groupBy { it.groupName ?: "Group A" }
+        println("DEBUG: Groups found: ${groups.keys}")
         val qualifiersPerGroup = competition.qualifiersPerGroup ?: 2
         
-        groups.forEach { (_, groupTeams) ->
+        groups.forEach { (name, groupTeams) ->
             val groupMatches = matches.filter { it.stage?.startsWith("Group") == true }
+            println("DEBUG: Processing group '$name', teams in group: ${groupTeams.size}, total group matches: ${groupMatches.size}")
+
             val stats = StandingsCalculator.calculateStandings(groupMatches, groupTeams.map { it.id })
             
             val topStats = stats.take(qualifiersPerGroup)
+            println("DEBUG: Top stats selected: ${topStats.size} (Qualifier limit: $qualifiersPerGroup)")
+            
             val topTeamIds = topStats.map { it.teamId }
             qualifiedTeams.addAll(teams.filter { it.id in topTeamIds })
         }
         
+        println("DEBUG: Total Qualified Teams: ${qualifiedTeams.size}")
+        
         if (qualifiedTeams.isNotEmpty()) {
+            val initialCount = getMatchesForCompetition(competitionId).size
             MatchGenerator.generateAndSaveKnockoutBracket(this, competitionId, qualifiedTeams, competition.fieldCount ?: 1)
+            val finalCount = getMatchesForCompetition(competitionId).size
+            println("DEBUG: New matches created: ${finalCount - initialCount}")
+            return finalCount - initialCount
         }
+        return 0
     }
 }
