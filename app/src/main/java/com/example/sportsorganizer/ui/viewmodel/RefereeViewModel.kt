@@ -34,9 +34,16 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+    
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message.asStateFlow()
 
     fun clearError() {
         _error.value = null
+    }
+    
+    fun clearMessage() {
+        _message.value = null
     }
 
     fun login(competitionIdStr: String, password: String) {
@@ -114,6 +121,15 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
                 
                 // Update DB
                  repository.updateMatch(updatedMatch)
+                 
+                 // Check winning score
+                val state = _loginState.value
+                if (state is RefereeLoginState.Success) {
+                     val limit = state.competition.winningScore
+                     if (limit != null && (newScore1 >= limit || newScore2 >= limit)) {
+                         _message.value = "Winning score ($limit) reached!"
+                     }
+                }
             } catch (e: Exception) {
                 _error.value = "Failed to update score: ${e.message}"
             }
@@ -123,7 +139,13 @@ class RefereeViewModel(private val repository: CompetitionRepository) : ViewMode
     fun updateMatchStatus(match: Match, newStatus: String) {
         viewModelScope.launch {
             try {
-                val updatedMatch = match.copy(status = newStatus)
+                var updatedMatch = match.copy(status = newStatus)
+                
+                // Set start time if starting and not set
+                if (newStatus == "in_progress" && updatedMatch.startTime == null) {
+                    updatedMatch = updatedMatch.copy(startTime = System.currentTimeMillis().toString())
+                }
+
                 _matches.value = _matches.value.map { if (it.id == match.id) updatedMatch else it }
                 repository.updateMatch(updatedMatch)
                 

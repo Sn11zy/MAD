@@ -57,6 +57,8 @@ import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.ui.viewmodel.RefereeLoginState
 import com.example.sportsorganizer.ui.viewmodel.RefereeViewModel
 import com.example.sportsorganizer.ui.viewmodel.RefereeViewModelFactory
+import kotlinx.coroutines.delay
+import kotlin.math.max
 
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,12 +71,20 @@ fun RefereeScreen(
     val loginState by viewModel.loginState.collectAsState()
     val selectedField by viewModel.selectedField.collectAsState()
     val error by viewModel.error.collectAsState()
+    val message by viewModel.message.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(error) {
         error?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        }
+    }
+    
+    LaunchedEffect(message) {
+        message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
         }
     }
 
@@ -124,7 +134,8 @@ fun RefereeScreen(
                     } else {
                         MatchControlContent(
                             viewModel = viewModel,
-                            fieldNumber = selectedField!!
+                            fieldNumber = selectedField!!,
+                            gameDuration = state.competition.gameDuration
                         )
                     }
                 }
@@ -207,7 +218,7 @@ fun FieldSelectionContent(fieldCount: Int, onFieldSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int) {
+fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int, gameDuration: Int?) {
     val matches by viewModel.matches.collectAsState()
     val teamNames by viewModel.teamNames.collectAsState()
 
@@ -232,6 +243,7 @@ fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int) {
                         match = match,
                         team1Name = team1Name,
                         team2Name = team2Name,
+                        gameDuration = gameDuration,
                         onScoreUpdate = { m, s1, s2 -> viewModel.updateMatchScore(m, s1, s2) },
                         onStatusUpdate = { m, status -> viewModel.updateMatchStatus(m, status) }
                     )
@@ -242,10 +254,36 @@ fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int) {
 }
 
 @Composable
+fun MatchTimer(match: Match, gameDurationMinutes: Int?) {
+    if (match.status != "in_progress" || gameDurationMinutes == null) return
+    
+    // Logic to count down
+    var remainingSeconds by remember { mutableStateOf((gameDurationMinutes * 60L)) }
+    
+    LaunchedEffect(match.startTime) {
+        val start = match.startTime?.toLongOrNull() ?: System.currentTimeMillis()
+        while(true) {
+            val elapsed = (System.currentTimeMillis() - start) / 1000
+            remainingSeconds = max(0, (gameDurationMinutes * 60) - elapsed)
+            delay(1000)
+        }
+    }
+    
+    Text(
+        text = String.format("%02d:%02d", remainingSeconds / 60, remainingSeconds % 60),
+        style = MaterialTheme.typography.displayMedium,
+        color = Color.Red,
+        fontWeight = FontWeight.Bold
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+}
+
+@Composable
 fun MatchCard(
     match: Match,
     team1Name: String,
     team2Name: String,
+    gameDuration: Int?,
     onScoreUpdate: (Match, Int, Int) -> Unit,
     onStatusUpdate: (Match, String) -> Unit
 ) {
@@ -256,7 +294,7 @@ fun MatchCard(
             containerColor = if (match.status == "in_progress") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -277,6 +315,9 @@ fun MatchCard(
             }
             
             Spacer(modifier = Modifier.height(8.dp))
+            
+            // Timer
+            MatchTimer(match, gameDuration)
 
             // Scoreboard
             Row(
