@@ -26,14 +26,11 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
-import com.example.sportsorganizer.data.local.daos.CompetitionDao
-import com.example.sportsorganizer.data.local.daos.UserDao
 import com.example.sportsorganizer.data.local.entities.Competition
-import com.example.sportsorganizer.data.local.entities.User
+import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.data.repository.WeatherRepository
 import com.example.sportsorganizer.ui.viewmodel.UiState
 import com.example.sportsorganizer.ui.viewmodel.WeatherViewModel
@@ -45,10 +42,10 @@ import com.example.sportsorganizer.ui.viewmodel.WeatherViewModelFactory
 fun CompetitionDetailScreen(
     onUpPress: () -> Unit,
     competitionId: Long,
-    competitionDao: CompetitionDao,
+    competitionRepository: CompetitionRepository,
 ) {
     val competition by produceState<Competition?>(initialValue = null, key1 = competitionId) {
-        value = competitionDao.findById(competitionId)
+        value = competitionRepository.getCompetitionById(competitionId)
     }
 
     val viewModel: WeatherViewModel =
@@ -58,7 +55,9 @@ fun CompetitionDetailScreen(
 
     LaunchedEffect(competition) {
         competition?.let {
-            viewModel.fetchWeather(it.latitude, it.longitude, it.eventDate)
+            if (it.latitude != null && it.longitude != null && it.date != null) {
+                viewModel.fetchWeather(it.latitude, it.longitude, it.date)
+            }
         }
     }
 
@@ -96,27 +95,31 @@ fun CompetitionDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(text = currentCompetition.competitionName ?: "No name", style = MaterialTheme.typography.headlineMedium)
+                Text(text = currentCompetition.competitionName, style = MaterialTheme.typography.headlineMedium)
+                
+                if (currentCompetition.latitude != null && currentCompetition.longitude != null && currentCompetition.date != null) {
+                     Button(onClick = {
+                        viewModel.fetchWeather(currentCompetition.latitude, currentCompetition.longitude, currentCompetition.date)
+                    }) {
+                        Text("Refresh Weather")
+                    }
 
-                Button(onClick = {
-                    viewModel.fetchWeather(currentCompetition.latitude, currentCompetition.longitude, currentCompetition.eventDate)
-                }) {
-                    Text("Refresh Weather")
-                }
-
-                when (val state = uiState) {
-                    is UiState.Loading -> {
-                        CircularProgressIndicator()
+                    when (val state = uiState) {
+                        is UiState.Loading -> {
+                            CircularProgressIndicator()
+                        }
+                        is UiState.Success -> {
+                            val weather = state.weather.daily
+                            Text("Max Temperature: ${weather.temperatureMax.firstOrNull() ?: "-"}°C")
+                            Text("Precipitation Probability: ${weather.precipitationProbabilityMax.firstOrNull() ?: "-"}%")
+                            Text("Max Wind Speed: ${weather.windSpeedMax.firstOrNull() ?: "-"} km/h")
+                        }
+                        is UiState.Error -> {
+                            Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                        }
                     }
-                    is UiState.Success -> {
-                        val weather = state.weather.daily
-                        Text("Max Temperature: ${weather.temperatureMax.first()}°C")
-                        Text("Precipitation Probability: ${weather.precipitationProbabilityMax.first()}%")
-                        Text("Max Wind Speed: ${weather.windSpeedMax.first()} km/h")
-                    }
-                    is UiState.Error -> {
-                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                    }
+                } else {
+                     Text("Location or Date not set for this competition.")
                 }
             }
         } else {
@@ -124,31 +127,5 @@ fun CompetitionDetailScreen(
                 CircularProgressIndicator()
             }
         }
-    }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Preview(showBackground = true)
-@Composable
-private fun CompetitionDetailScreenPreview() {
-    MaterialTheme {
-        CompetitionDetailScreen(
-            onUpPress = {},
-            competitionId = 1,
-            competitionDao =
-                object : CompetitionDao {
-                    override fun getAll(): kotlinx.coroutines.flow.Flow<List<Competition>> = kotlinx.coroutines.flow.flowOf(emptyList())
-
-                    override suspend fun findById(id: Long): Competition? = null
-
-                    override suspend fun loadAllByIds(ids: IntArray): List<Competition> = emptyList()
-
-                    override suspend fun findByName(name: String): Competition? = null
-
-                    override suspend fun insertAll(vararg competition: Competition): List<Long> = emptyList()
-
-                    override suspend fun delete(competition: Competition) {}
-                },
-        )
     }
 }

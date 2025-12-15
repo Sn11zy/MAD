@@ -24,12 +24,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.sportsorganizer.data.repository.CompetitionRepository
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun HomeScreen(
     onNavigate: (String) -> Unit,
     onToggleTheme: () -> Unit,
+    competitionRepository: CompetitionRepository? = null // Optional for now or for previews
 ) {
     val isDarkTheme = isSystemInDarkTheme()
 
@@ -98,6 +100,6 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     MaterialTheme {
-        HomeScreen(onNavigate = {}, onToggleTheme = {})
+        HomeScreen(onNavigate = {}, onToggleTheme = {}, competitionRepository = null)
     }
 }

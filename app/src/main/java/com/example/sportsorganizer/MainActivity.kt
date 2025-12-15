@@ -14,14 +14,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.room.Room
-import com.example.sportsorganizer.data.local.dbs.AppDatabase
-import com.example.sportsorganizer.data.local.dbs.MIGRATION_1_2
-import com.example.sportsorganizer.data.local.dbs.MIGRATION_2_3
-import com.example.sportsorganizer.data.local.dbs.MIGRATION_3_4
-import com.example.sportsorganizer.data.local.dbs.MIGRATION_4_5
+import com.example.sportsorganizer.data.repository.CompetitionRepository
+import com.example.sportsorganizer.data.repository.UserRepository
 import com.example.sportsorganizer.ui.screens.AboutScreen
-import com.example.sportsorganizer.ui.screens.CompetitionConfigScreen
 import com.example.sportsorganizer.ui.screens.CompetitionDetailScreen
 import com.example.sportsorganizer.ui.screens.CompetitorScreen
 import com.example.sportsorganizer.ui.screens.HomeScreen
@@ -42,16 +37,10 @@ class MainActivity : ComponentActivity() {
             SportsOrganizerTheme(darkTheme = isDarkTheme) {
                 Surface {
                     val navController = rememberNavController()
-                    val db =
-                        remember {
-                            Room
-                                .databaseBuilder(
-                                    applicationContext,
-                                    AppDatabase::class.java,
-                                    "sports_organizer.db",
-                                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-                                .build()
-                        }
+                    // Initialize Repositories
+                    val competitionRepository = remember { CompetitionRepository() }
+                    val userRepository = remember { UserRepository() }
+
                     NavHost(
                         navController = navController,
                         startDestination = "home",
@@ -60,6 +49,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onNavigate = { route -> navController.navigate(route) },
                                 onToggleTheme = { themeViewModel.toggleTheme() },
+                                competitionRepository = competitionRepository
                             )
                         }
                         composable(
@@ -70,7 +60,7 @@ class MainActivity : ComponentActivity() {
                                 onNavigate = { route ->
                                     navController.navigate(route)
                                 },
-                                competitionDao = db.competitionDao(),
+                                competitionRepository = competitionRepository,
                             )
                         }
                         composable("referee") {
@@ -90,7 +80,10 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("user") {
-                            UserScreen(onUpPress = { navController.navigateUp() }, userDao = db.userDao())
+                            UserScreen(
+                                onUpPress = { navController.navigateUp() },
+                                userRepository = userRepository
+                            )
                         }
                         composable(
                             "competitionDetail/{competitionId}",
@@ -101,22 +94,7 @@ class MainActivity : ComponentActivity() {
                                 CompetitionDetailScreen(
                                     onUpPress = { navController.navigateUp() },
                                     competitionId = competitionId,
-                                    competitionDao = db.competitionDao(),
-                                )
-                            }
-                        }
-                        composable(
-                            "competitionConfig/{competitionId}",
-                            arguments = listOf(navArgument("competitionId") { type = NavType.LongType }),
-                        ) { backStackEntry ->
-                            val competitionId = backStackEntry.arguments?.getLong("competitionId")
-                            if (competitionId != null) {
-                                CompetitionConfigScreen(
-                                    competitionId = competitionId,
-                                    competitionDao = db.competitionDao(),
-                                    competitionConfigDao = db.competitionConfigDao(),
-                                    onConfirmDone = { navController.navigateUp() },
-                                    onUpPress = { navController.navigateUp() },
+                                    competitionRepository = competitionRepository,
                                 )
                             }
                         }

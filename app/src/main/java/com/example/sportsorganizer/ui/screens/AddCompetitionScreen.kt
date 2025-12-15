@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -37,13 +38,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
-import com.example.sportsorganizer.data.local.daos.CompetitionDao
-import com.example.sportsorganizer.data.local.entities.Competition
 import com.example.sportsorganizer.data.local.session.SessionManager
+import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModel
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 
@@ -52,7 +51,7 @@ import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 @Composable
 fun OrganizeScreen(
     onUpPress: () -> Unit,
-    competitionDao: CompetitionDao,
+    competitionRepository: CompetitionRepository,
     onNavigate: (String) -> Unit,
 ) {
     Scaffold(
@@ -75,14 +74,31 @@ fun OrganizeScreen(
                     ),
             )
         },
-    ) { innerPadding: PaddingValues ->
+    ) { innerPadding ->
         val viewModel: AddCompetitionViewModel =
             viewModel(
-                factory = AddCompetitionViewModelFactory(competitionDao),
+                factory = AddCompetitionViewModelFactory(competitionRepository),
             )
 
         var name by remember { mutableStateOf("") }
         var eventDate by remember { mutableStateOf("") }
+        var refereePassword by remember { mutableStateOf("") }
+        var competitionPassword by remember { mutableStateOf("") }
+        var startDate by remember { mutableStateOf("") }
+        var endDate by remember { mutableStateOf("") }
+        var sport by remember { mutableStateOf("") }
+        var fieldCount by remember { mutableStateOf("") }
+        var numberOfTeams by remember { mutableStateOf("") }
+        
+        // Dropdown states
+        var scoringType by remember { mutableStateOf("Points") }
+        var isScoringExpanded by remember { mutableStateOf(false) }
+        val scoringOptions = listOf("Points", "Time")
+
+        var tournamentMode by remember { mutableStateOf("Knockout") }
+        var isModeExpanded by remember { mutableStateOf(false) }
+        val modeOptions = listOf("Knockout", "Group Stage", "Combined")
+
         val contextForSession = LocalContext.current
         val sessionManager = remember { SessionManager(contextForSession) }
         val loggedInUserId = sessionManager.getLoggedInUserId()
@@ -95,7 +111,7 @@ fun OrganizeScreen(
         val competitions by viewModel.competitions.collectAsState()
         val visibleCompetitions =
             remember(competitions, loggedInUserId) {
-                if (loggedInUserId == null) emptyList() else competitions.filter { it.organizer == loggedInUserId }
+                if (loggedInUserId == null) emptyList() else competitions.filter { it.userId == loggedInUserId }
             }
 
         Column(
@@ -103,13 +119,16 @@ fun OrganizeScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(24.dp),
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (loggedInUserId != null) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-                Box {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+                
+                // City Search
+                Box(modifier = Modifier.fillMaxWidth()) {
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded },
@@ -119,7 +138,7 @@ fun OrganizeScreen(
                             onValueChange = { viewModel.onSearchQueryChanged(it) },
                             label = { Text("City") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.menuAnchor(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
                         )
                         ExposedDropdownMenu(
                             expanded = expanded,
@@ -137,11 +156,99 @@ fun OrganizeScreen(
                         }
                     }
                 }
-                OutlinedTextField(value = eventDate, onValueChange = { eventDate = it }, label = { Text("Event Date (YYYY-MM-DD)") })
+                
+                OutlinedTextField(value = eventDate, onValueChange = { eventDate = it }, label = { Text("Creation Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = refereePassword, onValueChange = { refereePassword = it }, label = { Text("Referee Password") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = competitionPassword, onValueChange = { competitionPassword = it }, label = { Text("Competition Password") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = startDate, onValueChange = { startDate = it }, label = { Text("Start Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = endDate, onValueChange = { endDate = it }, label = { Text("End Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = sport, onValueChange = { sport = it }, label = { Text("Sport") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = fieldCount, onValueChange = { fieldCount = it }, label = { Text("Field Count (Number)") }, modifier = Modifier.fillMaxWidth())
+                
+                // Scoring Type Dropdown
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    ExposedDropdownMenuBox(
+                        expanded = isScoringExpanded,
+                        onExpandedChange = { isScoringExpanded = !isScoringExpanded },
+                    ) {
+                        OutlinedTextField(
+                            value = scoringType,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Scoring Type") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isScoringExpanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = isScoringExpanded,
+                            onDismissRequest = { isScoringExpanded = false },
+                        ) {
+                            scoringOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        scoringType = option
+                                        isScoringExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+
+                OutlinedTextField(value = numberOfTeams, onValueChange = { numberOfTeams = it }, label = { Text("Number of Teams") }, modifier = Modifier.fillMaxWidth())
+                
+                // Tournament Mode Dropdown
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    ExposedDropdownMenuBox(
+                        expanded = isModeExpanded,
+                        onExpandedChange = { isModeExpanded = !isModeExpanded },
+                    ) {
+                        OutlinedTextField(
+                            value = tournamentMode,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tournament Mode") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModeExpanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = isModeExpanded,
+                            onDismissRequest = { isModeExpanded = false },
+                        ) {
+                            modeOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        tournamentMode = option
+                                        isModeExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Button(onClick = {
                     val organizer = loggedInUserId
-                    viewModel.createCompetition(name, organizer, eventDate)
-                }) { Text("Create") }
+                    val fields = fieldCount.toIntOrNull() ?: 1
+                    val teams = numberOfTeams.toIntOrNull() ?: 2
+                    
+                    viewModel.createCompetition(
+                        competitionName = name,
+                        userId = organizer,
+                        eventDate = eventDate,
+                        refereePassword = refereePassword,
+                        competitionPassword = competitionPassword,
+                        startDate = startDate,
+                        endDate = endDate,
+                        sport = sport,
+                        fieldCount = fields,
+                        scoringType = scoringType,
+                        numberOfTeams = teams,
+                        tournamentMode = tournamentMode
+                    )
+                }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Create") }
             }
             Text(
                 text = "Your competitions",
@@ -161,14 +268,15 @@ fun OrganizeScreen(
                     modifier = Modifier.padding(8.dp),
                 )
             } else {
-                LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
-                    items(visibleCompetitions) { competition ->
+                 Column(modifier = Modifier.padding(top = 16.dp)) {
+                    visibleCompetitions.forEach { competition ->
                         Card(
                             modifier =
                                 Modifier
                                     .padding(8.dp)
+                                    .fillMaxWidth()
                                     .clickable {
-                                        onNavigate("competitionConfig/${competition.id}")
+                                        onNavigate("competitionDetail/${competition.id}")
                                     },
                         ) {
                             Text(
@@ -186,6 +294,7 @@ fun OrganizeScreen(
                 is AddCompetitionViewModel.CreationResult.Success -> {
                     Toast.makeText(context, "Competition created", Toast.LENGTH_SHORT).show()
                     name = ""
+                    // Clear fields logic could be improved here by resetting all state vars
                 }
                 is AddCompetitionViewModel.CreationResult.Error -> {
                     val msg = (result as AddCompetitionViewModel.CreationResult.Error).message
@@ -194,31 +303,5 @@ fun OrganizeScreen(
                 else -> Unit
             }
         }
-    }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Preview(showBackground = true)
-@Composable
-private fun OrganizeScreenPreview() {
-    MaterialTheme {
-        OrganizeScreen(
-            onUpPress = {},
-            onNavigate = {},
-            competitionDao =
-                object : CompetitionDao {
-                    override fun getAll(): kotlinx.coroutines.flow.Flow<List<Competition>> = kotlinx.coroutines.flow.flowOf(emptyList())
-
-                    override suspend fun findById(id: Long): Competition? = null
-
-                    override suspend fun loadAllByIds(ids: IntArray): List<Competition> = emptyList()
-
-                    override suspend fun findByName(name: String): Competition? = null
-
-                    override suspend fun insertAll(vararg competition: Competition): List<Long> = emptyList()
-
-                    override suspend fun delete(competition: Competition) {}
-                },
-        )
     }
 }

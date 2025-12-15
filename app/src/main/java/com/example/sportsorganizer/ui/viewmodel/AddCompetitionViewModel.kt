@@ -3,11 +3,12 @@ package com.example.sportsorganizer.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.sportsorganizer.data.local.daos.CompetitionDao
 import com.example.sportsorganizer.data.local.entities.Competition
 import com.example.sportsorganizer.data.remote.City
+import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.data.repository.GeocodingRepository
 import com.example.sportsorganizer.data.repository.Result
+import com.example.sportsorganizer.utils.MatchGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AddCompetitionViewModel(
-    private val competitionDao: CompetitionDao,
+    private val competitionRepository: CompetitionRepository,
 ) : ViewModel() {
     sealed class CreationResult {
         data object Idle : CreationResult()
@@ -53,22 +54,16 @@ class AddCompetitionViewModel(
     private val geocodingRepository = GeocodingRepository()
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            competitionDao.getAll().collect { competitions ->
-                _competitions.value = competitions
-            }
-        }
+        fetchCompetitions()
 
         @OptIn(FlowPreview::class)
         viewModelScope.launch(Dispatchers.IO) {
             _searchQuery.debounce(300).collect { query ->
                 if (query.isNotBlank()) {
                     try {
-                        // perform network/geocoding work on IO (we're already on IO)
                         when (val result = geocodingRepository.searchCity(query)) {
                             is Result.Success -> _searchResults.value = result.data
                             is Result.Error -> {
-                                // Handle error, maybe expose it to the UI
                                 _searchResults.value = emptyList()
                             }
                         }
@@ -78,6 +73,16 @@ class AddCompetitionViewModel(
                 } else {
                     _searchResults.value = emptyList()
                 }
+            }
+        }
+    }
+    
+    fun fetchCompetitions() {
+        viewModelScope.launch {
+            try {
+                _competitions.value = competitionRepository.getAllCompetitions()
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
@@ -91,14 +96,23 @@ class AddCompetitionViewModel(
 
     fun onCitySelected(city: City) {
         _selectedCity.value = city
-        _searchQuery.value = "${city.name}, ${city.country}"
+        _searchQuery.value = "${city.name}, ${city.country ?: ""}"
         _searchResults.value = emptyList()
     }
 
     fun createCompetition(
         competitionName: String,
-        organizerId: Long,
+        userId: Long,
         eventDate: String,
+        refereePassword: String,
+        competitionPassword: String,
+        startDate: String,
+        endDate: String,
+        sport: String,
+        fieldCount: Int,
+        scoringType: String,
+        numberOfTeams: Int,
+        tournamentMode: String
     ) {
         val city = _selectedCity.value
         if (city == null) {
@@ -106,26 +120,54 @@ class AddCompetitionViewModel(
             return
         }
 
-        // Indicate loading on main
         _creationResult.value = CreationResult.Loading
 
-        // Perform DB write on IO to avoid blocking UI
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                // 1. Create Competition
                 val competition = Competition(
                     competitionName = competitionName,
-                    organizer = organizerId,
+                    userId = userId,
                     latitude = city.latitude,
                     longitude = city.longitude,
-                    eventDate = eventDate,
-                    address = city.name,
+                    date = eventDate, // Using 'date' as creation date or event date
+                    refereePassword = refereePassword,
+                    competitionPassword = competitionPassword,
+                    startDate = startDate,
+                    endDate = endDate,
+                    sport = sport,
+                    fieldCount = fieldCount,
+                    scoringType = scoringType,
+                    numberOfTeams = numberOfTeams,
+                    tournamentMode = tournamentMode
                 )
-                val newIds = competitionDao.insertAll(competition)
-                val newId = newIds.firstOrNull() ?: 0L
+                
+                val createdCompetition = competitionRepository.createCompetition(competition)
+                
+                if (createdCompetition != null) {
+                    val competitionId = createdCompetition.id
+                    
+                    // 2. Generate and Insert Teams
+                    val teams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
+                    val insertedTeams = competitionRepository.createTeams(teams)
+                    
+                    // 3. Generate and Insert Matches
+                    val matches = MatchGenerator.generateMatches(
+                        competitionId = competitionId,
+                        teams = insertedTeams,
+                        tournamentMode = tournamentMode,
+                        fieldCount = fieldCount
+                    )
+                    competitionRepository.createMatches(matches)
 
-                // Switch to Main to update UI state
-                withContext(Dispatchers.Main) {
-                    _creationResult.value = CreationResult.Success(newId)
+                    withContext(Dispatchers.Main) {
+                        _creationResult.value = CreationResult.Success(competitionId)
+                        fetchCompetitions() // Refresh list
+                    }
+                } else {
+                     withContext(Dispatchers.Main) {
+                        _creationResult.value = CreationResult.Error("Failed to create competition")
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -137,12 +179,12 @@ class AddCompetitionViewModel(
 }
 
 class AddCompetitionViewModelFactory(
-    private val competitionDao: CompetitionDao,
+    private val competitionRepository: CompetitionRepository,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AddCompetitionViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AddCompetitionViewModel(competitionDao) as T
+            return AddCompetitionViewModel(competitionRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

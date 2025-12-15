@@ -34,22 +34,23 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
-import com.example.sportsorganizer.data.local.daos.UserDao
 import com.example.sportsorganizer.data.local.entities.User
 import com.example.sportsorganizer.data.local.session.SessionManager
-import com.example.sportsorganizer.data.repository.AuthRepository
+import com.example.sportsorganizer.data.repository.UserRepository
 import com.example.sportsorganizer.ui.viewmodel.CreateUserViewModel
 import com.example.sportsorganizer.ui.viewmodel.CreateUserViewModelFactory
+import com.example.sportsorganizer.utils.PasswordHashing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun UserScreen(
     onUpPress: () -> Unit,
-    userDao: UserDao,
+    userRepository: UserRepository,
 ) {
     Scaffold(
         topBar = {
@@ -74,7 +75,7 @@ fun UserScreen(
     ) { innerPadding: PaddingValues ->
         val viewModel: CreateUserViewModel =
             viewModel(
-                factory = CreateUserViewModelFactory(userDao),
+                factory = CreateUserViewModelFactory(userRepository),
             )
         val context = LocalContext.current
         val result by viewModel.creationResult.collectAsState()
@@ -86,8 +87,8 @@ fun UserScreen(
         LaunchedEffect(loggedInUserId) {
             if (loggedInUserId != null) {
                 try {
-                    val users = userDao.loadAllByIds(longArrayOf(loggedInUserId!!))
-                    loggedInUser = users.firstOrNull()
+                    val user = userRepository.getUserById(loggedInUserId!!)
+                    loggedInUser = user
                 } catch (_: Exception) {
                     loggedInUser = null
                 }
@@ -140,26 +141,23 @@ fun UserScreen(
                     loginPassword = it
                 }, label = { Text("Password") }, modifier = Modifier.testTag("login_password"))
                 Button(onClick = {
-                    val repo = AuthRepository(userDao, context)
                     CoroutineScope(Dispatchers.IO).launch {
-                        val resultLogin = repo.login(loginUsername.trim(), loginPassword)
-                        if (resultLogin.isSuccess) {
-                            val user = resultLogin.getOrNull()
-                            if (user != null) {
+                        try {
+                            val user = userRepository.getUserByUsername(loginUsername.trim())
+                            if (user != null && PasswordHashing.verifyPassword(loginPassword, user.passwordHash)) {
                                 sessionManager.saveLoggedInUserId(user.id)
-                                CoroutineScope(Dispatchers.Main).launch {
+                                withContext(Dispatchers.Main) {
                                     loggedInUserId = user.id
                                     Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show()
                                 }
                             }
-                        } else {
-                            val msg = resultLogin.exceptionOrNull()?.message ?: "Login failed"
-                            CoroutineScope(Dispatchers.Main).launch {
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -177,10 +175,13 @@ fun UserScreen(
         LaunchedEffect(result) {
             when (result) {
                 is CreateUserViewModel.CreationResult.Success -> {
-                    val userId = (result as CreateUserViewModel.CreationResult.Success).userId
-                    sessionManager.saveLoggedInUserId(userId)
-                    loggedInUserId = userId
-                    Toast.makeText(context, "User created and logged in", Toast.LENGTH_SHORT).show()
+                    // Assuming success means user was created. We need to fetch the ID or have the backend return it.
+                    // For now, prompt user to login.
+                     Toast.makeText(context, "User created! Please login.", Toast.LENGTH_SHORT).show()
+                     first = ""
+                     last = ""
+                     username = ""
+                     password = ""
                 }
                 is CreateUserViewModel.CreationResult.Error -> {
                     val msg = (result as CreateUserViewModel.CreationResult.Error).message

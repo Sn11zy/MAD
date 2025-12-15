@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    id("org.jetbrains.kotlin.kapt")
 }
 
 import java.util.Properties
@@ -68,11 +67,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3)
-    kapt(libs.androidx.room.compiler)
-    implementation(libs.androidx.room.common.jvm)
     implementation(libs.retrofit)
     implementation(libs.moshi.converter)
     implementation(libs.moshi.kotlin)
