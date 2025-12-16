@@ -3,6 +3,25 @@ package com.example.sportsorganizer.data.local.entities
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Represents a single match within a competition.
+ *
+ * This data class maps to the `matches` table in the Supabase database.
+ * It tracks the teams involved, the score, the status, and the progression
+ * within the tournament structure.
+ *
+ * @property id The unique identifier for the match.
+ * @property competitionId The ID of the competition this match belongs to.
+ * @property fieldNumber The number of the field where the match is played.
+ * @property team1Id The ID of the first team (nullable for placeholders).
+ * @property team2Id The ID of the second team (nullable for placeholders).
+ * @property score1 The score of the first team.
+ * @property score2 The score of the second team.
+ * @property status The current status of the match ("scheduled", "in_progress", "finished").
+ * @property startTime The scheduled start time of the match.
+ * @property stage The tournament stage (e.g., "Group A", "Round 1", "Quarter-Final").
+ * @property nextMatchId The ID of the match where the winner of this match advances (for Knockout).
+ */
 @Serializable
 data class Match(
     val id: Long = 0,

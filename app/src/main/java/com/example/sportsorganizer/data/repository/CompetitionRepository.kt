@@ -12,16 +12,34 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/**
+ * Repository class for managing Competition-related data operations.
+ *
+ * Handles interactions with the remote Supabase database for Competitions,
+ * Matches, and Teams. It also encapsulates logic for generating tournament
+ * stages (Knockout) based on results.
+ */
 class CompetitionRepository {
 
     private val client = SupabaseModule.client
 
+    /**
+     * Fetches all competitions from the database.
+     *
+     * @return A list of [Competition] objects.
+     */
     suspend fun getAllCompetitions(): List<Competition> {
         return withContext(Dispatchers.IO) {
             client.from("competitions").select().decodeList<Competition>()
         }
     }
 
+    /**
+     * Fetches a specific competition by its ID.
+     *
+     * @param id The ID of the competition to retrieve.
+     * @return The [Competition] object if found, null otherwise.
+     */
     suspend fun getCompetitionById(id: Long): Competition? {
         return withContext(Dispatchers.IO) {
             client.from("competitions").select {
@@ -32,6 +50,12 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Creates a new competition in the database.
+     *
+     * @param competition The [Competition] object to create.
+     * @return The created [Competition] with its generated ID, or null on failure.
+     */
     suspend fun createCompetition(competition: Competition): Competition? {
         return withContext(Dispatchers.IO) {
              client.from("competitions").insert(competition) {
@@ -40,6 +64,11 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Updates an existing competition's configuration.
+     *
+     * @param competition The [Competition] object containing updated values.
+     */
     suspend fun updateCompetition(competition: Competition) {
         withContext(Dispatchers.IO) {
             val updateData = buildJsonObject {
@@ -62,6 +91,11 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Deletes a competition by its ID.
+     *
+     * @param id The ID of the competition to delete.
+     */
     suspend fun deleteCompetition(id: Long) {
         withContext(Dispatchers.IO) {
             client.from("competitions").delete {
@@ -73,6 +107,13 @@ class CompetitionRepository {
     }
 
     // Teams
+
+    /**
+     * Creates multiple teams in the database.
+     *
+     * @param teams A list of [Team] objects to create.
+     * @return The list of created [Team] objects with generated IDs.
+     */
     suspend fun createTeams(teams: List<Team>): List<Team> {
         return withContext(Dispatchers.IO) {
             client.from("teams").insert(teams) {
@@ -81,6 +122,13 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Updates multiple teams in the database.
+     *
+     * Used for renaming teams or assigning them to groups.
+     *
+     * @param teams A list of [Team] objects with updated information.
+     */
     suspend fun updateTeams(teams: List<Team>) {
         withContext(Dispatchers.IO) {
             // Using loop + update instead of upsert to avoid "cannot insert non-DEFAULT id" issues
@@ -99,6 +147,12 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Fetches all teams belonging to a specific competition.
+     *
+     * @param competitionId The ID of the competition.
+     * @return A list of [Team] objects.
+     */
     suspend fun getTeamsForCompetition(competitionId: Long): List<Team> {
         return withContext(Dispatchers.IO) {
             client.from("teams").select {
@@ -110,12 +164,24 @@ class CompetitionRepository {
     }
 
     // Matches
+
+    /**
+     * Creates multiple matches in the database.
+     *
+     * @param matches A list of [Match] objects to create.
+     */
     suspend fun createMatches(matches: List<Match>) {
         withContext(Dispatchers.IO) {
             client.from("matches").insert(matches)
         }
     }
     
+    /**
+     * Creates a single match in the database.
+     *
+     * @param match The [Match] object to create.
+     * @return The created [Match] with generated ID, or null on failure.
+     */
     suspend fun createMatch(match: Match): Match? {
         return withContext(Dispatchers.IO) {
             client.from("matches").insert(match) {
@@ -124,6 +190,12 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Fetches all matches for a specific competition.
+     *
+     * @param competitionId The ID of the competition.
+     * @return A list of [Match] objects.
+     */
     suspend fun getMatchesForCompetition(competitionId: Long): List<Match> {
         return withContext(Dispatchers.IO) {
             client.from("matches").select {
@@ -134,6 +206,13 @@ class CompetitionRepository {
         }
     }
     
+    /**
+     * Fetches matches assigned to a specific field in a competition.
+     *
+     * @param competitionId The ID of the competition.
+     * @param fieldNumber The field number.
+     * @return A list of [Match] objects.
+     */
     suspend fun getMatchesForField(competitionId: Long, fieldNumber: Int): List<Match> {
         return withContext(Dispatchers.IO) {
             client.from("matches").select {
@@ -145,6 +224,12 @@ class CompetitionRepository {
         }
     }
     
+    /**
+     * Fetches a single match by its ID.
+     *
+     * @param id The ID of the match.
+     * @return The [Match] object if found, null otherwise.
+     */
     suspend fun getMatchById(id: Long): Match? {
         return withContext(Dispatchers.IO) {
             client.from("matches").select {
@@ -155,6 +240,13 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Updates an existing match.
+     *
+     * Handles score updates, status changes, and advancing teams (via stage or nextMatchId).
+     *
+     * @param match The [Match] object with updated values.
+     */
     suspend fun updateMatch(match: Match) {
         withContext(Dispatchers.IO) {
             val updateData = buildJsonObject {
@@ -174,6 +266,15 @@ class CompetitionRepository {
         }
     }
     
+    /**
+     * Generates the knockout stage for a "Combined" tournament mode.
+     *
+     * Calculates standings from the Group Stage, identifies qualified teams,
+     * and generates the bracket structure for the knockout phase.
+     *
+     * @param competitionId The ID of the competition.
+     * @return The number of new matches created, or error codes (-1 for already exists, 0 for none).
+     */
     suspend fun generateKnockoutStage(competitionId: Long): Int {
         println("DEBUG: generateKnockoutStage called for $competitionId")
         val teams = getTeamsForCompetition(competitionId)
