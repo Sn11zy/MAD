@@ -35,6 +35,7 @@ fun HomeScreen(
     val isDarkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
+    val isLoggedIn = sessionManager.getLoggedInUserId() != null
 
     Scaffold(
         topBar = {
@@ -80,9 +81,8 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Button(onClick = {
-                        val loggedIn = sessionManager.getLoggedInUserId() != null
-                        if (loggedIn) onNavigate("organize") else onNavigate("user")
-                    }) { Text("Organize") }
+                        if (isLoggedIn) onNavigate("organize") else onNavigate("user")
+                    }) { Text(if (isLoggedIn) "Organize" else "Organizer Login") }
                     Button(onClick = { onNavigate("referee") }) { Text("Referee") }
                     Button(onClick = { onNavigate("competitor") }) { Text("Competitor") }
                 }

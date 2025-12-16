@@ -125,7 +125,7 @@ fun OrganizeScreen(
 
         val contextForSession = LocalContext.current
         val sessionManager = remember { SessionManager(contextForSession) }
-        val loggedInUserId = sessionManager.getLoggedInUserId()
+        var loggedInUserId by remember { mutableStateOf(sessionManager.getLoggedInUserId()) }
         val searchQuery by viewModel.searchQuery.collectAsState()
         val searchResults by viewModel.searchResults.collectAsState()
         var expanded by remember { mutableStateOf(false) }
@@ -187,6 +187,16 @@ fun OrganizeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (loggedInUserId != null) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Button(onClick = {
+                        sessionManager.clearSession()
+                        loggedInUserId = null
+                        Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                        onUpPress()
+                    }) {
+                        Text("Logout")
+                    }
+                }
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
                 
                 // City Search
@@ -344,7 +354,7 @@ fun OrganizeScreen(
                 }
 
                 Button(onClick = {
-                    val organizer = loggedInUserId
+                    val organizer = loggedInUserId ?: return@Button
                     val fields = fieldCount.toIntOrNull() ?: 1
                     val teams = numberOfTeams.toIntOrNull() ?: 2
                     val groups = numberOfGroups.toIntOrNull() ?: 1
