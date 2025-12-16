@@ -148,6 +148,7 @@ fun UserScreen(
                                 withContext(Dispatchers.Main) {
                                     loggedInUserId = user.id
                                     Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                    onUpPress()
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
@@ -160,7 +161,7 @@ fun UserScreen(
                             }
                         }
                     }
-                    onUpPress()}, modifier = Modifier.testTag("login_button")) { Text("Login") }
+                    }, modifier = Modifier.testTag("login_button")) { Text("Login") }
         }
 
         LaunchedEffect(result) {
