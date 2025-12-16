@@ -7,14 +7,17 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -46,6 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
@@ -55,6 +60,7 @@ import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModel
 import com.example.sportsorganizer.ui.viewmodel.AddCompetitionViewModelFactory
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,19 +104,19 @@ fun OrganizeScreen(
         var sport by remember { mutableStateOf("") }
         var fieldCount by remember { mutableStateOf("") }
         var numberOfTeams by remember { mutableStateOf("") }
-        
+
         // Date Pickers
         var showStartDatePicker by remember { mutableStateOf(false) }
         var showEndDatePicker by remember { mutableStateOf(false) }
         val startDatePickerState = rememberDatePickerState()
         val endDatePickerState = rememberDatePickerState()
-        
+
         // New Inputs
         var numberOfGroups by remember { mutableStateOf("1") }
         var qualifiersPerGroup by remember { mutableStateOf("2") }
         var pointsPerWin by remember { mutableStateOf("3") }
         var pointsPerDraw by remember { mutableStateOf("1") }
-        
+
         // Dropdown states
         var scoringType by remember { mutableStateOf("Points") }
         var isScoringExpanded by remember { mutableStateOf(false) }
@@ -119,6 +125,9 @@ fun OrganizeScreen(
         var tournamentMode by remember { mutableStateOf("Knockout") }
         var isModeExpanded by remember { mutableStateOf(false) }
         val modeOptions = listOf("Knockout", "Group Stage", "Combined")
+
+        // Game Rules Configuration
+        var configValue by remember { mutableStateOf("") }
 
         val contextForSession = LocalContext.current
         val sessionManager = remember { SessionManager(contextForSession) }
@@ -141,14 +150,19 @@ fun OrganizeScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         startDatePickerState.selectedDateMillis?.let { millis ->
-                            startDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+                            startDate =
+                                Instant
+                                    .ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                    .toString()
                         }
                         showStartDatePicker = false
                     }) { Text("OK") }
                 },
                 dismissButton = {
                     TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel") }
-                }
+                },
             ) {
                 DatePicker(state = startDatePickerState)
             }
@@ -160,14 +174,19 @@ fun OrganizeScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         endDatePickerState.selectedDateMillis?.let { millis ->
-                            endDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+                            endDate =
+                                Instant
+                                    .ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                    .toString()
                         }
                         showEndDatePicker = false
                     }) { Text("OK") }
                 },
                 dismissButton = {
                     TextButton(onClick = { showEndDatePicker = false }) { Text("Cancel") }
-                }
+                },
             ) {
                 DatePicker(state = endDatePickerState)
             }
@@ -195,7 +214,7 @@ fun OrganizeScreen(
                     }
                 }
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
-                
+
                 // City Search
                 Box(modifier = Modifier.fillMaxWidth()) {
                     ExposedDropdownMenuBox(
@@ -225,10 +244,14 @@ fun OrganizeScreen(
                         }
                     }
                 }
-                
-                OutlinedTextField(value = refereePassword, onValueChange = { refereePassword = it }, label = { Text("Referee Password") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = competitionPassword, onValueChange = { competitionPassword = it }, label = { Text("Competition Password") }, modifier = Modifier.fillMaxWidth())
-                
+
+                OutlinedTextField(value = refereePassword, onValueChange = {
+                    refereePassword = it
+                }, label = { Text("Referee Password") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = competitionPassword, onValueChange = {
+                    competitionPassword = it
+                }, label = { Text("Competition Password") }, modifier = Modifier.fillMaxWidth())
+
                 // Date Pickers
                 OutlinedTextField(
                     value = startDate,
@@ -237,16 +260,17 @@ fun OrganizeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
                     trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
-                    interactionSource = remember { MutableInteractionSource() }
-                        .also { interactionSource ->
-                            LaunchedEffect(interactionSource) {
-                                interactionSource.interactions.collect {
-                                    if (it is PressInteraction.Release) {
-                                        showStartDatePicker = true
+                    interactionSource =
+                        remember { MutableInteractionSource() }
+                            .also { interactionSource ->
+                                LaunchedEffect(interactionSource) {
+                                    interactionSource.interactions.collect {
+                                        if (it is PressInteraction.Release) {
+                                            showStartDatePicker = true
+                                        }
                                     }
                                 }
-                            }
-                        }
+                            },
                 )
 
                 OutlinedTextField(
@@ -256,21 +280,29 @@ fun OrganizeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
                     trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
-                    interactionSource = remember { MutableInteractionSource() }
-                        .also { interactionSource ->
-                            LaunchedEffect(interactionSource) {
-                                interactionSource.interactions.collect {
-                                    if (it is PressInteraction.Release) {
-                                        showEndDatePicker = true
+                    interactionSource =
+                        remember { MutableInteractionSource() }
+                            .also { interactionSource ->
+                                LaunchedEffect(interactionSource) {
+                                    interactionSource.interactions.collect {
+                                        if (it is PressInteraction.Release) {
+                                            showEndDatePicker = true
+                                        }
                                     }
                                 }
-                            }
-                        }
+                            },
                 )
 
-                OutlinedTextField(value = sport, onValueChange = { sport = it }, label = { Text("Sport") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = fieldCount, onValueChange = { fieldCount = it }, label = { Text("Field Count (Number)") }, modifier = Modifier.fillMaxWidth())
-                
+                OutlinedTextField(
+                    value = sport,
+                    onValueChange = { sport = it },
+                    label = { Text("Sport") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(value = fieldCount, onValueChange = {
+                    fieldCount = it
+                }, label = { Text("Field Count (Number)") }, modifier = Modifier.fillMaxWidth())
+
                 // Scoring Type Dropdown
                 Box(modifier = Modifier.fillMaxWidth()) {
                     ExposedDropdownMenuBox(
@@ -302,8 +334,10 @@ fun OrganizeScreen(
                     }
                 }
 
-                OutlinedTextField(value = numberOfTeams, onValueChange = { numberOfTeams = it }, label = { Text("Number of Teams") }, modifier = Modifier.fillMaxWidth())
-                
+                OutlinedTextField(value = numberOfTeams, onValueChange = {
+                    numberOfTeams = it
+                }, label = { Text("Number of Teams") }, modifier = Modifier.fillMaxWidth())
+
                 // Tournament Mode Dropdown
                 Box(modifier = Modifier.fillMaxWidth()) {
                     ExposedDropdownMenuBox(
@@ -334,20 +368,41 @@ fun OrganizeScreen(
                         }
                     }
                 }
-                
-                // Conditional Inputs based on Mode
-                if (tournamentMode == "Group Stage" || tournamentMode == "Combined") {
-                     OutlinedTextField(value = numberOfGroups, onValueChange = { numberOfGroups = it }, label = { Text("Number of Groups") }, modifier = Modifier.fillMaxWidth())
+
+                // Game Rules Configuration
+                if (scoringType == "Points" || scoringType == "Time") {
+                    OutlinedTextField(
+                        value = configValue,
+                        onValueChange = { configValue = it },
+                        label = { Text(if (scoringType == "Points") "Winning Score (e.g. 21)" else "Game Duration (minutes)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
-                
+
+                if (tournamentMode == "Group Stage" || tournamentMode == "Combined") {
+                    OutlinedTextField(value = numberOfGroups, onValueChange = {
+                        numberOfGroups = it
+                    }, label = { Text("Number of Groups") }, modifier = Modifier.fillMaxWidth())
+                }
+
                 if (tournamentMode == "Combined") {
-                     OutlinedTextField(value = qualifiersPerGroup, onValueChange = { qualifiersPerGroup = it }, label = { Text("Teams advancing per group") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = qualifiersPerGroup, onValueChange = {
+                        qualifiersPerGroup = it
+                    }, label = { Text("Teams advancing per group") }, modifier = Modifier.fillMaxWidth())
                 }
 
                 Text("Advanced Settings", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = pointsPerWin, onValueChange = { pointsPerWin = it }, label = { Text("Pts/Win") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = pointsPerDraw, onValueChange = { pointsPerDraw = it }, label = { Text("Pts/Draw") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(
+                        value = pointsPerWin,
+                        onValueChange = { pointsPerWin = it },
+                        label = { Text("Pts/Win") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(value = pointsPerDraw, onValueChange = {
+                        pointsPerDraw = it
+                    }, label = { Text("Pts/Draw") }, modifier = Modifier.weight(1f))
                 }
 
                 Button(onClick = {
@@ -358,7 +413,9 @@ fun OrganizeScreen(
                     val qualifiers = qualifiersPerGroup.toIntOrNull()
                     val pWin = pointsPerWin.toIntOrNull() ?: 3
                     val pDraw = pointsPerDraw.toIntOrNull() ?: 1
-                    
+                    val winningScore = if (scoringType == "Points") configValue.toIntOrNull() else null
+                    val gameDuration = if (scoringType == "Time") configValue.toIntOrNull() else null
+
                     viewModel.createCompetition(
                         competitionName = name,
                         userId = organizer,
@@ -374,9 +431,11 @@ fun OrganizeScreen(
                         numberOfGroups = groups,
                         qualifiersPerGroup = qualifiers,
                         pointsPerWin = pWin,
-                        pointsPerDraw = pDraw
+                        pointsPerDraw = pDraw,
+                        winningScore = winningScore,
+                        gameDuration = gameDuration,
                     )
-                }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Create") }
+                }, modifier = Modifier.padding(top = 8.dp)) { Text("Create") }
             }
             Text(
                 text = "Your competitions",
@@ -396,7 +455,7 @@ fun OrganizeScreen(
                     modifier = Modifier.padding(8.dp),
                 )
             } else {
-                 Column(modifier = Modifier.padding(top = 16.dp)) {
+                Column(modifier = Modifier.padding(top = 16.dp)) {
                     visibleCompetitions.forEach { competition ->
                         Card(
                             modifier =
@@ -407,10 +466,20 @@ fun OrganizeScreen(
                                         onNavigate("competitionDetail/${competition.id}")
                                     },
                         ) {
-                            Text(
-                                text = competition.competitionName,
-                                modifier = Modifier.padding(16.dp),
-                            )
+                            Row(
+                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = competition.competitionName,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                )
+                            }
                         }
                     }
                 }
@@ -424,6 +493,7 @@ fun OrganizeScreen(
                     onNavigate("teamNaming/$id")
                     // Reset fields
                     name = ""
+                    configValue = ""
                 }
                 is AddCompetitionViewModel.CreationResult.Error -> {
                     val msg = (result as AddCompetitionViewModel.CreationResult.Error).message

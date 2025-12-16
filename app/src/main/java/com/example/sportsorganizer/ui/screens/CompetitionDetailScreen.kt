@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -65,7 +64,7 @@ fun CompetitionDetailScreen(
     onUpPress: () -> Unit,
     competitionId: Long,
     competitionRepository: CompetitionRepository,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -77,7 +76,7 @@ fun CompetitionDetailScreen(
     val matches = remember { mutableStateListOf<Match>() }
     val teams = remember { mutableStateListOf<Team>() }
     val isLoadingData = remember { mutableStateOf(true) }
-    
+
     // Edit Dialog State
     var editingMatch by remember { mutableStateOf<Match?>(null) }
 
@@ -86,7 +85,7 @@ fun CompetitionDetailScreen(
             val fetchedMatches = competitionRepository.getMatchesForCompetition(competitionId)
             matches.clear()
             matches.addAll(fetchedMatches)
-            
+
             val fetchedTeams = competitionRepository.getTeamsForCompetition(competitionId)
             teams.clear()
             teams.addAll(fetchedTeams)
@@ -129,7 +128,7 @@ fun CompetitionDetailScreen(
                         editingMatch = null
                     }
                 }
-            }
+            },
         )
     }
 
@@ -168,11 +167,10 @@ fun CompetitionDetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = currentCompetition.competitionName, style = MaterialTheme.typography.headlineMedium)
-                Text(text = "ID: " + currentCompetition.id.toString(), style = MaterialTheme.typography.headlineSmall)
-                
+
                 // Weather Section
                 if (currentCompetition.latitude != null && currentCompetition.longitude != null && currentCompetition.eventDate != null) {
-                     Button(onClick = {
+                    Button(onClick = {
                         viewModel.fetchWeather(currentCompetition.latitude, currentCompetition.longitude, currentCompetition.eventDate)
                     }) {
                         Text("Refresh Weather")
@@ -193,19 +191,21 @@ fun CompetitionDetailScreen(
                         }
                     }
                 } else {
-                     Text("Location or Date not set for this competition.")
+                    Text("Location or Date not set for this competition.")
                 }
 
                 Button(
                     onClick = { onNavigate("teamNaming/$competitionId") },
-                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Edit Teams & Configuration")
                 }
-                
+
                 // Combined Mode Logic: Generate Knockout Button
                 if (currentCompetition.tournamentMode == "Combined") {
-                    val hasKnockout = matches.any { it.stage?.contains("Round") == true || it.stage?.contains("Semi") == true || it.stage?.contains("Final") == true }
+                    val hasKnockout =
+                        matches.any {
+                            it.stage?.contains("Round") == true || it.stage?.contains("Semi") == true || it.stage?.contains("Final") == true
+                        }
                     if (!hasKnockout) {
                         Button(
                             onClick = {
@@ -217,20 +217,35 @@ fun CompetitionDetailScreen(
                                         val newMatches = competitionRepository.getMatchesForCompetition(competitionId)
                                         matches.clear()
                                         matches.addAll(newMatches)
-                                        
+
                                         if (result > 0) {
-                                            Toast.makeText(context, "Knockout Stage Generated! ($result matches)", Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Knockout Stage Generated! ($result matches)",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         } else if (result == -1) {
-                                            Toast.makeText(context, "Knockout Stage already exists (refresh maybe?)", Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Knockout Stage already exists (refresh maybe?)",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         } else {
-                                            Toast.makeText(context, "No matches generated (0 teams qualified?)", Toast.LENGTH_LONG).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "No matches generated (0 teams qualified?)",
+                                                    Toast.LENGTH_LONG,
+                                                ).show()
                                         }
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Generate Knockout Stage")
                         }
@@ -250,19 +265,20 @@ fun CompetitionDetailScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(visibleMatches) { match ->
                             val team1 = teams.find { it.id == match.team1Id }?.teamName ?: "TBD"
                             val team2 = teams.find { it.id == match.team2Id }?.teamName ?: "TBD"
-                            
+
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("Field ${match.fieldNumber ?: "-"}: $team1 vs $team2")
@@ -293,12 +309,12 @@ fun CompetitionDetailScreen(
 fun EditMatchDialog(
     match: Match,
     onDismiss: () -> Unit,
-    onConfirm: (Match) -> Unit
+    onConfirm: (Match) -> Unit,
 ) {
     var score1 by remember { mutableStateOf(match.score1.toString()) }
     var score2 by remember { mutableStateOf(match.score2.toString()) }
     var status by remember { mutableStateOf(match.status) }
-    
+
     val statuses = listOf("scheduled", "in_progress", "finished")
 
     AlertDialog(
@@ -310,21 +326,21 @@ fun EditMatchDialog(
                     value = score1,
                     onValueChange = { score1 = it },
                     label = { Text("Score 1") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 OutlinedTextField(
                     value = score2,
                     onValueChange = { score2 = it },
                     label = { Text("Score 2") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
-                
+
                 Text("Status:", modifier = Modifier.padding(top = 8.dp))
                 statuses.forEach { s ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(
                             selected = status == s,
-                            onClick = { status = s }
+                            onClick = { status = s },
                         )
                         Text(s)
                     }
@@ -337,7 +353,7 @@ fun EditMatchDialog(
                     val s1 = score1.toIntOrNull() ?: match.score1
                     val s2 = score2.toIntOrNull() ?: match.score2
                     onConfirm(match.copy(score1 = s1, score2 = s2, status = status))
-                }
+                },
             ) {
                 Text("Save")
             }
@@ -346,6 +362,6 @@ fun EditMatchDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }

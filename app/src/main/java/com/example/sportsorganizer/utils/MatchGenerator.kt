@@ -9,8 +9,21 @@ import kotlin.math.ceil
 import kotlin.math.log2
 import kotlin.math.pow
 
+/**
+ * Utility object for generating match schedules and brackets.
+ *
+ * Contains logic for Round Robin generation (Group Stages) and
+ * Single Elimination Brackets (Knockout Stages).
+ */
 object MatchGenerator {
 
+    /**
+     * Generates a list of placeholder teams for a competition.
+     *
+     * @param competitionId The ID of the competition.
+     * @param numberOfTeams The number of teams to generate.
+     * @return A list of [Team] objects named "Team 1", "Team 2", etc.
+     */
     fun generateTeams(competitionId: Long, numberOfTeams: Int): List<Team> {
         val teams = mutableListOf<Team>()
         for (i in 1..numberOfTeams) {
@@ -24,6 +37,13 @@ object MatchGenerator {
         return teams
     }
 
+    /**
+     * Assigns teams to groups randomly.
+     *
+     * @param teams The list of teams to assign.
+     * @param numberOfGroups The number of groups to distribute teams into.
+     * @return A new list of [Team] objects with assigned `groupName`.
+     */
     fun assignGroups(teams: List<Team>, numberOfGroups: Int): List<Team> {
         if (numberOfGroups <= 1) return teams
         
@@ -39,7 +59,19 @@ object MatchGenerator {
         return assignedTeams
     }
 
-    // Classic flat generation (Group Stage)
+    /**
+     * Generates matches for a competition based on its mode.
+     *
+     * Handles "Group Stage" and "Combined" modes by generating Round Robin matches.
+     * "Knockout" mode logic is handled separately in [generateAndSaveKnockoutBracket].
+     *
+     * @param competitionId The ID of the competition.
+     * @param teams The participating teams.
+     * @param tournamentMode The mode of the tournament.
+     * @param fieldCount The number of available fields.
+     * @param numberOfGroups The number of groups (for group-based modes).
+     * @return A list of [Match] objects ready to be saved.
+     */
     fun generateMatches(
         competitionId: Long,
         teams: List<Team>,
@@ -56,7 +88,17 @@ object MatchGenerator {
         }
     }
 
-    // Advanced Tree Generation (Knockout)
+    /**
+     * Generates and saves a knockout bracket structure to the repository.
+     *
+     * Creates a tree structure of matches (Final -> Semis -> Quarters etc.)
+     * and populates the first round with the provided teams.
+     *
+     * @param repo The [CompetitionRepository] used to save matches.
+     * @param competitionId The ID of the competition.
+     * @param teams The teams qualifying for the knockout stage.
+     * @param fieldCount Number of fields to distribute matches across.
+     */
     suspend fun generateAndSaveKnockoutBracket(
         repo: CompetitionRepository,
         competitionId: Long,

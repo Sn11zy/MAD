@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                         composable("competitor") {
                             CompetitorScreen(
                                 onUpPress = { navController.navigateUp() },
-                                repository = competitionRepository
+                                repository = competitionRepository,
                             )
                         }
                         composable("about") {
@@ -112,7 +112,8 @@ class MainActivity : ComponentActivity() {
                                 TeamNamingScreen(
                                     competitionId = competitionId,
                                     competitionRepository = competitionRepository,
-                                    onConfirm = { navController.navigate("home") }, // Or to detail
+                                    onConfirm = { navController.navigate("home") },
+                                    onUpPress = { navController.navigateUp() },
                                 )
                             }
                         }
