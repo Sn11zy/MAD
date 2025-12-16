@@ -130,6 +130,36 @@ class CompetitionRepository {
         }
     }
 
+    /**
+     * Deletes all matches associated with a competition.
+     *
+     * @param competitionId The ID of the competition.
+     */
+    suspend fun deleteMatchesForCompetition(competitionId: Long) {
+        withContext(Dispatchers.IO) {
+            client.from("matches").delete {
+                filter {
+                    eq("competition_id", competitionId)
+                }
+            }
+        }
+    }
+
+    /**
+     * Deletes all teams associated with a competition.
+     *
+     * @param competitionId The ID of the competition.
+     */
+    suspend fun deleteTeamsForCompetition(competitionId: Long) {
+        withContext(Dispatchers.IO) {
+            client.from("teams").delete {
+                filter {
+                    eq("competition_id", competitionId)
+                }
+            }
+        }
+    }
+
     // Teams
 
     /**

@@ -185,6 +185,66 @@ class AddCompetitionViewModel(
 
                 competitionRepository.updateCompetition(competition)
                 
+                // --- REGENERATION LOGIC START ---
+                // Fetch current matches to see if we need to regenerate
+                val existingMatches = competitionRepository.getMatchesForCompetition(competitionId)
+                
+                // Logic: If user edited structure (teams, groups, fields, mode), we assume they want to reset schedule.
+                // Especially since user requested: "regenerate brackets, groupstages... delete prior generated entries"
+                
+                // Note: We don't have easy access to "old" competition state here unless we fetched it earlier and passed it.
+                // However, the fact that we are in 'updateCompetition' implies an edit.
+                // A safe heuristic: If existing matches exist, and we just updated config, 
+                // we should regenerate IF the structure implies it.
+                // But blindly regenerating might delete progress. 
+                // Given the user prompt "if user edits then we have to regenerate...", let's be aggressive for this prototype.
+                
+                // 1. Delete all existing matches
+                competitionRepository.deleteMatchesForCompetition(competitionId)
+                
+                // 2. Handle Team Changes (If number of teams changed)
+                val currentTeams = competitionRepository.getTeamsForCompetition(competitionId)
+                if (currentTeams.size != numberOfTeams) {
+                    // Hard Reset Teams
+                    competitionRepository.deleteTeamsForCompetition(competitionId)
+                    val newTeams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
+                    // If we had groups before, maybe we should assign them?
+                    // But generateTeams creates raw teams.
+                    // We need to re-assign groups if mode requires it.
+                    var teamsWithGroups = newTeams
+                    if (tournamentMode == "Group Stage" || tournamentMode == "Combined") {
+                        teamsWithGroups = MatchGenerator.assignGroups(newTeams, numberOfGroups ?: 1)
+                    }
+                    competitionRepository.createTeams(teamsWithGroups)
+                } else {
+                    // Teams count same, but groups might have changed. Re-assign groups.
+                    if (tournamentMode == "Group Stage" || tournamentMode == "Combined") {
+                        val updatedTeams = MatchGenerator.assignGroups(currentTeams, numberOfGroups ?: 1)
+                        competitionRepository.updateTeams(updatedTeams)
+                    }
+                }
+                
+                // 3. Regenerate Matches
+                // Fetch teams again (in case we recreated them)
+                val teamsForGen = competitionRepository.getTeamsForCompetition(competitionId)
+                
+                if (tournamentMode == "Knockout") {
+                    // For pure knockout, we can generate bracket immediately if we want, or wait for user.
+                    // But 'delete prior' suggests we should replace them.
+                    MatchGenerator.generateAndSaveKnockoutBracket(competitionRepository, competitionId, teamsForGen, fieldCount)
+                } else {
+                    // Group Stage or Combined (Initial Phase)
+                    val matches = MatchGenerator.generateMatches(
+                        competitionId, 
+                        teamsForGen, 
+                        tournamentMode, 
+                        fieldCount, 
+                        numberOfGroups ?: 1
+                    )
+                    competitionRepository.createMatches(matches)
+                }
+                // --- REGENERATION LOGIC END ---
+                
                 withContext(Dispatchers.Main) {
                     _creationResult.value = CreationResult.Success(competitionId)
                     fetchCompetitions()
