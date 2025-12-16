@@ -167,7 +167,7 @@ fun CompetitionDetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = currentCompetition.competitionName, style = MaterialTheme.typography.headlineMedium)
-
+                Text(text = "ID: " + currentCompetition.id.toString(), style = MaterialTheme.typography.headlineSmall)
                 // Weather Section
                 if (currentCompetition.latitude != null && currentCompetition.longitude != null && currentCompetition.eventDate != null) {
                     Button(onClick = {

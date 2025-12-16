@@ -4,10 +4,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
@@ -75,18 +77,14 @@ fun HomeScreen(
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.width(IntrinsicSize.Min)
                 ) {
                     Button(onClick = {
                         if (isLoggedIn) onNavigate("organize") else onNavigate("user")
-                    }) { Text(if (isLoggedIn) "Organize" else "Organizer Login") }
-                    Button(onClick = { onNavigate("referee") }) { Text("Referee") }
-                    Button(onClick = { onNavigate("competitor") }) { Text("Competitor") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Organize")}
+                    Button(onClick = { onNavigate("referee") }, modifier = Modifier.fillMaxWidth()) { Text("Referee") }
+                    Button(onClick = { onNavigate("competitor") }, modifier = Modifier.fillMaxWidth()) { Text("Competitor") }
                 }
-            }
         }
     }
 }
