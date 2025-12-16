@@ -3,7 +3,6 @@ package com.example.sportsorganizer.data.local.session
 import android.content.Context
 import androidx.core.content.edit
 
-// only for production use
 class SessionManager(
     context: Context,
 ) {

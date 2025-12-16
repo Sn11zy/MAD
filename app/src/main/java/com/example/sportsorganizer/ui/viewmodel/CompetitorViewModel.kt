@@ -20,7 +20,7 @@ sealed class CompetitorUiState {
 
     data class Success(
         val competition: Competition,
-        val standings: Map<String, List<TeamStats>>, // Changed to Map<GroupName, Stats>
+        val standings: Map<String, List<TeamStats>>,
         val matches: List<Match>,
         val teamNames: Map<Long, String>,
     ) : CompetitorUiState()
@@ -74,8 +74,6 @@ class CompetitorViewModel(
                         loadData(competition)
                     }
                 } catch (e: Exception) {
-                    // Keep current state but maybe show error?
-                    // For now silent fail on refresh or just log
                 }
             }
         }

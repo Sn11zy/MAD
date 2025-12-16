@@ -69,7 +69,7 @@ fun OrganizeScreen(
     onUpPress: () -> Unit,
     competitionRepository: CompetitionRepository,
     onNavigate: (String) -> Unit,
-    competitionId: Long? = null
+    competitionId: Long? = null,
 ) {
     Scaffold(
         topBar = {
@@ -144,7 +144,7 @@ fun OrganizeScreen(
             remember(competitions, loggedInUserId) {
                 if (loggedInUserId == null) emptyList() else competitions.filter { it.userId == loggedInUserId }
             }
-            
+
         // Load Data if Editing
         LaunchedEffect(competitionId) {
             if (competitionId != null) {
@@ -164,20 +164,11 @@ fun OrganizeScreen(
                     qualifiersPerGroup = comp.qualifiersPerGroup?.toString() ?: "2"
                     pointsPerWin = comp.pointsPerWin.toString()
                     pointsPerDraw = comp.pointsPerDraw.toString()
-                    
+
                     if (comp.scoringType == "Points") {
                         configValue = comp.winningScore?.toString() ?: ""
                     } else if (comp.scoringType == "Time") {
                         configValue = comp.gameDuration?.toString() ?: ""
-                    }
-                    
-                    // We also need to set city if possible, but simpler is to let user re-select if they want to change location.
-                    // Ideally we fetch location name from lat/long via reverse geocoding, but that API might not be setup.
-                    if (comp.latitude != null) {
-                         // Hack: Set a dummy city so validation passes if user doesn't touch it?
-                         // Or better, modify create/update to not require city if updating.
-                         // For now, let's assume they might need to re-select city if they want to update location.
-                         // But to avoid blocking update, we can pre-populate selectedCity in VM if we had a proper City object.
                     }
                 }
             }
@@ -560,7 +551,7 @@ fun OrganizeScreen(
                     } else {
                         onUpPress()
                     }
-                    
+
                     // Reset fields
                     name = ""
                     configValue = ""

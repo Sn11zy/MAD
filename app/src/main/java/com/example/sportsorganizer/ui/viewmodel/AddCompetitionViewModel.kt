@@ -106,24 +106,19 @@ class AddCompetitionViewModel(
             val competition = competitionRepository.getCompetitionById(competitionId)
             if (competition != null) {
                 // Manually construct City with correct types (String, String?, Double, Double)
-                val city = City(
-                    name = competition.competitionName, 
-                    country = "", 
-                    latitude = competition.latitude ?: 0.0, 
-                    longitude = competition.longitude ?: 0.0
-                )
+                val city =
+                    City(
+                        name = competition.competitionName,
+                        country = "",
+                        latitude = competition.latitude ?: 0.0,
+                        longitude = competition.longitude ?: 0.0,
+                    )
                 _selectedCity.value = city
             }
         }
     }
-    
-    // Better approach: Since UI holds state, we can return the competition object to the UI via a suspend function or callback?
-    // Or just let the UI call repository directly for loading? 
-    // The UI in OrganizeScreen is already complex. 
-    // Let's add a function to get competition that returns it.
-    suspend fun getCompetition(id: Long): Competition? {
-        return competitionRepository.getCompetitionById(id)
-    }
+
+    suspend fun getCompetition(id: Long): Competition? = competitionRepository.getCompetitionById(id)
 
     fun updateCompetition(
         competitionId: Long,
@@ -146,25 +141,20 @@ class AddCompetitionViewModel(
         gameDuration: Int? = null,
     ) {
         val city = _selectedCity.value
-        // If city is null, we might want to keep existing lat/long if this is an update and user didn't change city.
-        // But for now let's assume they search city again or we load it.
-        
+
         _creationResult.value = CreationResult.Loading
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // If updating, we need the original competition to preserve ID and maybe lat/long if not changed.
-                // But here we just construct a new object with the ID.
-                
                 val lat = city?.latitude
                 val lon = city?.longitude
-                
+
                 val competition =
                     Competition(
                         id = competitionId,
                         competitionName = competitionName,
                         userId = userId,
-                        latitude = lat, // This might nullify location if not re-selected. Ideally we should handle this better.
+                        latitude = lat,
                         longitude = lon,
                         refereePassword = refereePassword,
                         competitionPassword = competitionPassword,
@@ -184,67 +174,46 @@ class AddCompetitionViewModel(
                     )
 
                 competitionRepository.updateCompetition(competition)
-                
-                // --- REGENERATION LOGIC START ---
-                // Fetch current matches to see if we need to regenerate
+
+                // REGENERATION LOGIC START
+
                 val existingMatches = competitionRepository.getMatchesForCompetition(competitionId)
-                
-                // Logic: If user edited structure (teams, groups, fields, mode), we assume they want to reset schedule.
-                // Especially since user requested: "regenerate brackets, groupstages... delete prior generated entries"
-                
-                // Note: We don't have easy access to "old" competition state here unless we fetched it earlier and passed it.
-                // However, the fact that we are in 'updateCompetition' implies an edit.
-                // A safe heuristic: If existing matches exist, and we just updated config, 
-                // we should regenerate IF the structure implies it.
-                // But blindly regenerating might delete progress. 
-                // Given the user prompt "if user edits then we have to regenerate...", let's be aggressive for this prototype.
-                
-                // 1. Delete all existing matches
+
                 competitionRepository.deleteMatchesForCompetition(competitionId)
-                
-                // 2. Handle Team Changes (If number of teams changed)
+
                 val currentTeams = competitionRepository.getTeamsForCompetition(competitionId)
                 if (currentTeams.size != numberOfTeams) {
-                    // Hard Reset Teams
                     competitionRepository.deleteTeamsForCompetition(competitionId)
                     val newTeams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
-                    // If we had groups before, maybe we should assign them?
-                    // But generateTeams creates raw teams.
-                    // We need to re-assign groups if mode requires it.
+
                     var teamsWithGroups = newTeams
                     if (tournamentMode == "Group Stage" || tournamentMode == "Combined") {
                         teamsWithGroups = MatchGenerator.assignGroups(newTeams, numberOfGroups ?: 1)
                     }
                     competitionRepository.createTeams(teamsWithGroups)
                 } else {
-                    // Teams count same, but groups might have changed. Re-assign groups.
                     if (tournamentMode == "Group Stage" || tournamentMode == "Combined") {
                         val updatedTeams = MatchGenerator.assignGroups(currentTeams, numberOfGroups ?: 1)
                         competitionRepository.updateTeams(updatedTeams)
                     }
                 }
-                
-                // 3. Regenerate Matches
-                // Fetch teams again (in case we recreated them)
+
                 val teamsForGen = competitionRepository.getTeamsForCompetition(competitionId)
-                
+
                 if (tournamentMode == "Knockout") {
-                    // For pure knockout, we can generate bracket immediately if we want, or wait for user.
-                    // But 'delete prior' suggests we should replace them.
                     MatchGenerator.generateAndSaveKnockoutBracket(competitionRepository, competitionId, teamsForGen, fieldCount)
                 } else {
-                    // Group Stage or Combined (Initial Phase)
-                    val matches = MatchGenerator.generateMatches(
-                        competitionId, 
-                        teamsForGen, 
-                        tournamentMode, 
-                        fieldCount, 
-                        numberOfGroups ?: 1
-                    )
+                    val matches =
+                        MatchGenerator.generateMatches(
+                            competitionId,
+                            teamsForGen,
+                            tournamentMode,
+                            fieldCount,
+                            numberOfGroups ?: 1,
+                        )
                     competitionRepository.createMatches(matches)
                 }
-                // --- REGENERATION LOGIC END ---
-                
+
                 withContext(Dispatchers.Main) {
                     _creationResult.value = CreationResult.Success(competitionId)
                     fetchCompetitions()
@@ -260,7 +229,6 @@ class AddCompetitionViewModel(
     fun createCompetition(
         competitionName: String,
         userId: Long,
-        // eventDate removed, generated automatically
         refereePassword: String,
         competitionPassword: String,
         startDate: String,
@@ -270,7 +238,6 @@ class AddCompetitionViewModel(
         scoringType: String,
         numberOfTeams: Int,
         tournamentMode: String,
-        // New params
         numberOfGroups: Int?,
         qualifiersPerGroup: Int?,
         pointsPerWin: Int = 3,
@@ -288,9 +255,8 @@ class AddCompetitionViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val today = LocalDate.now().toString() // YYYY-MM-DD
+                val today = LocalDate.now().toString()
 
-                // 1. Create Competition
                 val competition =
                     Competition(
                         competitionName = competitionName,
@@ -307,7 +273,6 @@ class AddCompetitionViewModel(
                         scoringType = scoringType,
                         numberOfTeams = numberOfTeams,
                         tournamentMode = tournamentMode,
-                        // New Fields
                         numberOfGroups = numberOfGroups,
                         qualifiersPerGroup = qualifiersPerGroup,
                         pointsPerWin = pointsPerWin,
@@ -321,7 +286,6 @@ class AddCompetitionViewModel(
                 if (createdCompetition != null) {
                     val competitionId = createdCompetition.id
 
-                    // 2. Generate and Insert Teams (Placeholders)
                     val teams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
                     competitionRepository.createTeams(teams)
 

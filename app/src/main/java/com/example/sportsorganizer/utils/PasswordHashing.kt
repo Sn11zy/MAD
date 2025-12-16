@@ -7,9 +7,6 @@ import javax.crypto.spec.PBEKeySpec
 
 class PasswordHashing {
     companion object {
-        // Stored formats supported:
-        // 1) algorithm:iterations:saltBase64:hashBase64  (preferred)
-        // 2) iterations:saltBase64:hashBase64           (legacy - assumes PBKDF2WithHmacSHA256)
         private const val PREFERRED_ALGO = "PBKDF2WithHmacSHA256"
         private const val FALLBACK_ALGO = "PBKDF2WithHmacSHA1"
 
@@ -116,7 +113,6 @@ class PasswordHashing {
 
                 return constantTimeArrayEquals(stored, testHash)
             } catch (_: Exception) {
-                // For any parsing/crypto errors, do not throw; return false to indicate verification failed.
                 return false
             }
         }

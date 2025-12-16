@@ -181,7 +181,6 @@ fun CompetitorLoginContent(
 fun CompetitorDashboard(state: CompetitorUiState.Success) {
     var selectedTab by remember { mutableStateOf(0) }
 
-    // Determine tabs based on mode
     val tabs = mutableListOf("Matches")
     val mode = state.competition.tournamentMode
     if (mode == "Group Stage" || mode == "Combined") {

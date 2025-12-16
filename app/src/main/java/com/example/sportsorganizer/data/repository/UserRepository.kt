@@ -6,13 +6,7 @@ import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Repository class for managing User-related operations.
- *
- * Handles authentication checks and user creation via Supabase.
- */
 class UserRepository {
-
     private val client = SupabaseModule.client
 
     /**
@@ -32,15 +26,16 @@ class UserRepository {
      * @param username The username to search for.
      * @return The [User] object if found, null otherwise.
      */
-    suspend fun getUserByUsername(username: String): User? {
-        return withContext(Dispatchers.IO) {
-            client.from("users").select {
-                filter {
-                    eq("username", username)
-                }
-            }.decodeSingleOrNull<User>()
+    suspend fun getUserByUsername(username: String): User? =
+        withContext(Dispatchers.IO) {
+            client
+                .from("users")
+                .select {
+                    filter {
+                        eq("username", username)
+                    }
+                }.decodeSingleOrNull<User>()
         }
-    }
 
     /**
      * Retrieves a user by their ID.
@@ -48,13 +43,14 @@ class UserRepository {
      * @param id The ID of the user.
      * @return The [User] object if found, null otherwise.
      */
-    suspend fun getUserById(id: Long): User? {
-        return withContext(Dispatchers.IO) {
-            client.from("users").select {
-                filter {
-                    eq("id", id)
-                }
-            }.decodeSingleOrNull<User>()
+    suspend fun getUserById(id: Long): User? =
+        withContext(Dispatchers.IO) {
+            client
+                .from("users")
+                .select {
+                    filter {
+                        eq("id", id)
+                    }
+                }.decodeSingleOrNull<User>()
         }
-    }
 }

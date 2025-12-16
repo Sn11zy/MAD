@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sportsorganizer.R
@@ -114,54 +115,62 @@ fun UserScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-                OutlinedTextField(value = first, onValueChange = { first = it }, label = { Text("First name") })
-                OutlinedTextField(value = last, onValueChange = { last = it }, label = { Text("Last name") })
-                OutlinedTextField(value = username, onValueChange = {
-                    username = it
-                }, label = { Text("Username") }, modifier = Modifier.testTag("create_username"))
-                OutlinedTextField(value = password, onValueChange = {
-                    password = it
-                }, label = { Text("Password") }, modifier = Modifier.testTag("create_password"))
-                Button(onClick = {
-                    viewModel.createUser(
-                        firstName = first.ifBlank { null },
-                        lastName = last.ifBlank { null },
-                        username = username,
-                        password = password,
-                    )
-                }, modifier = Modifier.testTag("create_button")) { Text("Create") }
+            OutlinedTextField(value = first, onValueChange = { first = it }, label = { Text("First name") })
+            OutlinedTextField(value = last, onValueChange = { last = it }, label = { Text("Last name") })
+            OutlinedTextField(value = username, onValueChange = {
+                username = it
+            }, label = { Text("Username") }, modifier = Modifier.testTag("create_username"))
+            OutlinedTextField(value = password, onValueChange = {
+                password = it
+            }, label = {
+                Text(
+                    "Password",
+                )
+            }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.testTag("create_password"))
+            Button(onClick = {
+                viewModel.createUser(
+                    firstName = first.ifBlank { null },
+                    lastName = last.ifBlank { null },
+                    username = username,
+                    password = password,
+                )
+            }, modifier = Modifier.testTag("create_button")) { Text("Create") }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                Text(text = "Login", style = MaterialTheme.typography.headlineSmall)
-                OutlinedTextField(value = loginUsername, onValueChange = {
-                    loginUsername = it
-                }, label = { Text("Username") }, modifier = Modifier.testTag("login_username"))
-                OutlinedTextField(value = loginPassword, onValueChange = {
-                    loginPassword = it
-                }, label = { Text("Password") }, modifier = Modifier.testTag("login_password"))
-                Button(onClick = {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            val user = userRepository.getUserByUsername(loginUsername.trim())
-                            if (user != null && PasswordHashing.verifyPassword(loginPassword, user.passwordHash)) {
-                                sessionManager.saveLoggedInUserId(user.id)
-                                withContext(Dispatchers.Main) {
-                                    loggedInUserId = user.id
-                                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                                    onUpPress()
-                                }
-                            } else {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        } catch (e: Exception) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(text = "Login", style = MaterialTheme.typography.headlineSmall)
+            OutlinedTextField(value = loginUsername, onValueChange = {
+                loginUsername = it
+            }, label = { Text("Username") }, modifier = Modifier.testTag("login_username"))
+            OutlinedTextField(value = loginPassword, onValueChange = {
+                loginPassword = it
+            }, label = {
+                Text(
+                    "Password",
+                )
+            }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.testTag("login_password"))
+            Button(onClick = {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val user = userRepository.getUserByUsername(loginUsername.trim())
+                        if (user != null && PasswordHashing.verifyPassword(loginPassword, user.passwordHash)) {
+                            sessionManager.saveLoggedInUserId(user.id)
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                loggedInUserId = user.id
+                                Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                onUpPress()
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show()
                             }
                         }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    }, modifier = Modifier.testTag("login_button")) { Text("Login") }
+                }
+            }, modifier = Modifier.testTag("login_button")) { Text("Login") }
         }
 
         LaunchedEffect(result) {
@@ -169,11 +178,11 @@ fun UserScreen(
                 is CreateUserViewModel.CreationResult.Success -> {
                     // Assuming success means user was created. We need to fetch the ID or have the backend return it.
                     // For now, prompt user to login.
-                     Toast.makeText(context, "User created! Please login.", Toast.LENGTH_SHORT).show()
-                     first = ""
-                     last = ""
-                     username = ""
-                     password = ""
+                    Toast.makeText(context, "User created! Please login.", Toast.LENGTH_SHORT).show()
+                    first = ""
+                    last = ""
+                    username = ""
+                    password = ""
                 }
                 is CreateUserViewModel.CreationResult.Error -> {
                     val msg = (result as CreateUserViewModel.CreationResult.Error).message

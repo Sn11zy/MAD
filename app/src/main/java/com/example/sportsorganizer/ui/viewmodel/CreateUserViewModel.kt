@@ -44,17 +44,18 @@ class CreateUserViewModel(
                 // We let Supabase generate the ID, or we can generate one.
                 // Since our Entity has id = 0 default, Supabase should handle it if we omit it or send 0 (if configured).
                 // However, our User entity has `val id: Long = 0`.
-                
+
                 val hashedPassword = PasswordHashing.hashPassword(password)
-                
-                val user = User(
-                    firstName = firstName,
-                    lastName = lastName,
-                    username = username,
-                    passwordHash = hashedPassword
-                )
+
+                val user =
+                    User(
+                        firstName = firstName,
+                        lastName = lastName,
+                        username = username,
+                        passwordHash = hashedPassword,
+                    )
                 userRepository.createUser(user)
-                _creationResult.value = CreationResult.Success(0) // We don't get the ID back easily here without fetch, assuming success
+                _creationResult.value = CreationResult.Success(0)
             } catch (e: Exception) {
                 _creationResult.value = CreationResult.Error(e.message ?: "Unknown error")
             }

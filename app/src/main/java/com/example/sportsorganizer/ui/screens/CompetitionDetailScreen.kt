@@ -75,9 +75,10 @@ fun CompetitionDetailScreen(
     val sessionManager = remember { SessionManager(context) }
     val loggedInUserId = sessionManager.getLoggedInUserId()
 
-    val competitionState = produceState<Competition?>(initialValue = null, key1 = competitionId) {
-        value = competitionRepository.getCompetitionById(competitionId)
-    }
+    val competitionState =
+        produceState<Competition?>(initialValue = null, key1 = competitionId) {
+            value = competitionRepository.getCompetitionById(competitionId)
+        }
     var competition = competitionState.value
 
     // State for matches and teams
@@ -159,7 +160,7 @@ fun CompetitionDetailScreen(
                             }
                         }
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
                     Text("Delete")
                 }
@@ -168,7 +169,7 @@ fun CompetitionDetailScreen(
                 TextButton(onClick = { showDeleteDialog = false }) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 
@@ -222,7 +223,7 @@ fun CompetitionDetailScreen(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
             )
         },
@@ -274,7 +275,6 @@ fun CompetitionDetailScreen(
                     Text("Edit Teams & Configuration")
                 }
 
-                // Combined Mode Logic: Generate Knockout Button
                 if (currentCompetition.tournamentMode == "Combined") {
                     val hasKnockout =
                         matches.any {
@@ -385,7 +385,6 @@ fun EditMatchDialog(
     onDismiss: () -> Unit,
     onConfirm: (Match) -> Unit,
 ) {
-
     var score1 by remember { mutableStateOf(match.score1.toString()) }
     var score2 by remember { mutableStateOf(match.score2.toString()) }
     var status by remember { mutableStateOf(match.status) }
