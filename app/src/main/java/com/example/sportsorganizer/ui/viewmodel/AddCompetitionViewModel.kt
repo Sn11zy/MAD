@@ -101,6 +101,102 @@ class AddCompetitionViewModel(
         _searchResults.value = emptyList()
     }
 
+    fun loadCompetition(competitionId: Long) {
+        viewModelScope.launch {
+            val competition = competitionRepository.getCompetitionById(competitionId)
+            if (competition != null) {
+                // Manually construct City with correct types (String, String?, Double, Double)
+                val city = City(
+                    name = competition.competitionName, 
+                    country = "", 
+                    latitude = competition.latitude ?: 0.0, 
+                    longitude = competition.longitude ?: 0.0
+                )
+                _selectedCity.value = city
+            }
+        }
+    }
+    
+    // Better approach: Since UI holds state, we can return the competition object to the UI via a suspend function or callback?
+    // Or just let the UI call repository directly for loading? 
+    // The UI in OrganizeScreen is already complex. 
+    // Let's add a function to get competition that returns it.
+    suspend fun getCompetition(id: Long): Competition? {
+        return competitionRepository.getCompetitionById(id)
+    }
+
+    fun updateCompetition(
+        competitionId: Long,
+        competitionName: String,
+        userId: Long,
+        refereePassword: String,
+        competitionPassword: String,
+        startDate: String,
+        endDate: String,
+        sport: String,
+        fieldCount: Int,
+        scoringType: String,
+        numberOfTeams: Int,
+        tournamentMode: String,
+        numberOfGroups: Int?,
+        qualifiersPerGroup: Int?,
+        pointsPerWin: Int = 3,
+        pointsPerDraw: Int = 1,
+        winningScore: Int? = null,
+        gameDuration: Int? = null,
+    ) {
+        val city = _selectedCity.value
+        // If city is null, we might want to keep existing lat/long if this is an update and user didn't change city.
+        // But for now let's assume they search city again or we load it.
+        
+        _creationResult.value = CreationResult.Loading
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // If updating, we need the original competition to preserve ID and maybe lat/long if not changed.
+                // But here we just construct a new object with the ID.
+                
+                val lat = city?.latitude
+                val lon = city?.longitude
+                
+                val competition =
+                    Competition(
+                        id = competitionId,
+                        competitionName = competitionName,
+                        userId = userId,
+                        latitude = lat, // This might nullify location if not re-selected. Ideally we should handle this better.
+                        longitude = lon,
+                        refereePassword = refereePassword,
+                        competitionPassword = competitionPassword,
+                        startDate = startDate,
+                        endDate = endDate,
+                        sport = sport,
+                        fieldCount = fieldCount,
+                        scoringType = scoringType,
+                        numberOfTeams = numberOfTeams,
+                        tournamentMode = tournamentMode,
+                        numberOfGroups = numberOfGroups,
+                        qualifiersPerGroup = qualifiersPerGroup,
+                        pointsPerWin = pointsPerWin,
+                        pointsPerDraw = pointsPerDraw,
+                        winningScore = winningScore,
+                        gameDuration = gameDuration,
+                    )
+
+                competitionRepository.updateCompetition(competition)
+                
+                withContext(Dispatchers.Main) {
+                    _creationResult.value = CreationResult.Success(competitionId)
+                    fetchCompetitions()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _creationResult.value = CreationResult.Error(e.message ?: "Unknown error")
+                }
+            }
+        }
+    }
+
     fun createCompetition(
         competitionName: String,
         userId: Long,

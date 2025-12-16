@@ -72,6 +72,17 @@ class CompetitionRepository {
     suspend fun updateCompetition(competition: Competition) {
         withContext(Dispatchers.IO) {
             val updateData = buildJsonObject {
+                put("competition_name", competition.competitionName)
+                competition.refereePassword?.let { put("referee_password", it) }
+                competition.competitionPassword?.let { put("competition_password", it) }
+                competition.startDate?.let { put("start_date", it) }
+                competition.endDate?.let { put("end_date", it) }
+                competition.sport?.let { put("sport", it) }
+                competition.fieldCount?.let { put("field_count", it) }
+                competition.scoringType?.let { put("scoring_type", it) }
+                competition.tournamentMode?.let { put("tournament_mode", it) }
+                
+                // Advanced settings
                 competition.gameDuration?.let { put("game_duration", it) }
                 competition.winningScore?.let { put("winning_score", it) }
                 competition.numberOfGroups?.let { put("number_of_groups", it) }
@@ -98,6 +109,19 @@ class CompetitionRepository {
      */
     suspend fun deleteCompetition(id: Long) {
         withContext(Dispatchers.IO) {
+            // First delete related matches
+            client.from("matches").delete {
+                filter {
+                    eq("competition_id", id)
+                }
+            }
+            // Delete related teams
+            client.from("teams").delete {
+                filter {
+                    eq("competition_id", id)
+                }
+            }
+            // Finally delete the competition
             client.from("competitions").delete {
                 filter {
                     eq("id", id)

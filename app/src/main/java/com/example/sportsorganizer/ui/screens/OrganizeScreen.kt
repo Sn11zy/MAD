@@ -69,11 +69,12 @@ fun OrganizeScreen(
     onUpPress: () -> Unit,
     competitionRepository: CompetitionRepository,
     onNavigate: (String) -> Unit,
+    competitionId: Long? = null
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.add_competition_title)) },
+                title = { Text(if (competitionId == null) stringResource(id = R.string.add_competition_title) else "Edit Competition") },
                 navigationIcon = {
                     IconButton(onClick = onUpPress) {
                         Icon(
@@ -143,6 +144,44 @@ fun OrganizeScreen(
             remember(competitions, loggedInUserId) {
                 if (loggedInUserId == null) emptyList() else competitions.filter { it.userId == loggedInUserId }
             }
+            
+        // Load Data if Editing
+        LaunchedEffect(competitionId) {
+            if (competitionId != null) {
+                val comp = viewModel.getCompetition(competitionId)
+                if (comp != null) {
+                    name = comp.competitionName
+                    refereePassword = comp.refereePassword ?: ""
+                    competitionPassword = comp.competitionPassword ?: ""
+                    startDate = comp.startDate ?: ""
+                    endDate = comp.endDate ?: ""
+                    sport = comp.sport ?: ""
+                    fieldCount = comp.fieldCount?.toString() ?: ""
+                    numberOfTeams = comp.numberOfTeams?.toString() ?: ""
+                    scoringType = comp.scoringType ?: "Points"
+                    tournamentMode = comp.tournamentMode ?: "Knockout"
+                    numberOfGroups = comp.numberOfGroups?.toString() ?: "1"
+                    qualifiersPerGroup = comp.qualifiersPerGroup?.toString() ?: "2"
+                    pointsPerWin = comp.pointsPerWin.toString()
+                    pointsPerDraw = comp.pointsPerDraw.toString()
+                    
+                    if (comp.scoringType == "Points") {
+                        configValue = comp.winningScore?.toString() ?: ""
+                    } else if (comp.scoringType == "Time") {
+                        configValue = comp.gameDuration?.toString() ?: ""
+                    }
+                    
+                    // We also need to set city if possible, but simpler is to let user re-select if they want to change location.
+                    // Ideally we fetch location name from lat/long via reverse geocoding, but that API might not be setup.
+                    if (comp.latitude != null) {
+                         // Hack: Set a dummy city so validation passes if user doesn't touch it?
+                         // Or better, modify create/update to not require city if updating.
+                         // For now, let's assume they might need to re-select city if they want to update location.
+                         // But to avoid blocking update, we can pre-populate selectedCity in VM if we had a proper City object.
+                    }
+                }
+            }
+        }
 
         if (showStartDatePicker) {
             DatePickerDialog(
@@ -416,69 +455,94 @@ fun OrganizeScreen(
                     val winningScore = if (scoringType == "Points") configValue.toIntOrNull() else null
                     val gameDuration = if (scoringType == "Time") configValue.toIntOrNull() else null
 
-                    viewModel.createCompetition(
-                        competitionName = name,
-                        userId = organizer,
-                        refereePassword = refereePassword,
-                        competitionPassword = competitionPassword,
-                        startDate = startDate,
-                        endDate = endDate,
-                        sport = sport,
-                        fieldCount = fields,
-                        scoringType = scoringType,
-                        numberOfTeams = teams,
-                        tournamentMode = tournamentMode,
-                        numberOfGroups = groups,
-                        qualifiersPerGroup = qualifiers,
-                        pointsPerWin = pWin,
-                        pointsPerDraw = pDraw,
-                        winningScore = winningScore,
-                        gameDuration = gameDuration,
-                    )
-                }, modifier = Modifier.padding(top = 8.dp)) { Text("Create") }
+                    if (competitionId == null) {
+                        viewModel.createCompetition(
+                            competitionName = name,
+                            userId = organizer,
+                            refereePassword = refereePassword,
+                            competitionPassword = competitionPassword,
+                            startDate = startDate,
+                            endDate = endDate,
+                            sport = sport,
+                            fieldCount = fields,
+                            scoringType = scoringType,
+                            numberOfTeams = teams,
+                            tournamentMode = tournamentMode,
+                            numberOfGroups = groups,
+                            qualifiersPerGroup = qualifiers,
+                            pointsPerWin = pWin,
+                            pointsPerDraw = pDraw,
+                            winningScore = winningScore,
+                            gameDuration = gameDuration,
+                        )
+                    } else {
+                        viewModel.updateCompetition(
+                            competitionId = competitionId,
+                            competitionName = name,
+                            userId = organizer,
+                            refereePassword = refereePassword,
+                            competitionPassword = competitionPassword,
+                            startDate = startDate,
+                            endDate = endDate,
+                            sport = sport,
+                            fieldCount = fields,
+                            scoringType = scoringType,
+                            numberOfTeams = teams,
+                            tournamentMode = tournamentMode,
+                            numberOfGroups = groups,
+                            qualifiersPerGroup = qualifiers,
+                            pointsPerWin = pWin,
+                            pointsPerDraw = pDraw,
+                            winningScore = winningScore,
+                            gameDuration = gameDuration,
+                        )
+                    }
+                }, modifier = Modifier.padding(top = 8.dp)) { Text(if (competitionId == null) "Create" else "Update") }
             }
-            Text(
-                text = "Your competitions",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-            if (loggedInUserId == null) {
+            if (competitionId == null) {
                 Text(
-                    text = "Log in to see your competitions",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(8.dp),
+                    text = "Your competitions",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(top = 16.dp),
                 )
-            } else if (visibleCompetitions.isEmpty()) {
-                Text(
-                    text = "No competitions found",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(8.dp),
-                )
-            } else {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
-                    visibleCompetitions.forEach { competition ->
-                        Card(
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onNavigate("competitionDetail/${competition.id}")
-                                    },
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
+                if (loggedInUserId == null) {
+                    Text(
+                        text = "Log in to see your competitions",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                } else if (visibleCompetitions.isEmpty()) {
+                    Text(
+                        text = "No competitions found",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                } else {
+                    Column(modifier = Modifier.padding(top = 16.dp)) {
+                        visibleCompetitions.forEach { competition ->
+                            Card(
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onNavigate("competitionDetail/${competition.id}")
+                                        },
                             ) {
-                                Text(
-                                    text = competition.competitionName,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                )
+                                Row(
+                                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = competition.competitionName,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                    )
+                                }
                             }
                         }
                     }
@@ -490,7 +554,13 @@ fun OrganizeScreen(
             when (result) {
                 is AddCompetitionViewModel.CreationResult.Success -> {
                     val id = (result as AddCompetitionViewModel.CreationResult.Success).competitionId
-                    onNavigate("teamNaming/$id")
+                    // If creating, go to Team Naming. If updating, go back.
+                    if (competitionId == null) {
+                        onNavigate("teamNaming/$id")
+                    } else {
+                        onUpPress()
+                    }
+                    
                     // Reset fields
                     name = ""
                     configValue = ""

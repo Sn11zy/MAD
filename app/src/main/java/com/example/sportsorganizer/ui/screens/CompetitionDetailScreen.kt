@@ -13,9 +13,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +53,7 @@ import com.example.sportsorganizer.R
 import com.example.sportsorganizer.data.local.entities.Competition
 import com.example.sportsorganizer.data.local.entities.Match
 import com.example.sportsorganizer.data.local.entities.Team
+import com.example.sportsorganizer.data.local.session.SessionManager
 import com.example.sportsorganizer.data.repository.CompetitionRepository
 import com.example.sportsorganizer.data.repository.WeatherRepository
 import com.example.sportsorganizer.ui.viewmodel.UiState
@@ -68,17 +72,45 @@ fun CompetitionDetailScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val competition by produceState<Competition?>(initialValue = null, key1 = competitionId) {
+    val sessionManager = remember { SessionManager(context) }
+    val loggedInUserId = sessionManager.getLoggedInUserId()
+
+    val competitionState = produceState<Competition?>(initialValue = null, key1 = competitionId) {
         value = competitionRepository.getCompetitionById(competitionId)
     }
+    var competition = competitionState.value
 
     // State for matches and teams
     val matches = remember { mutableStateListOf<Match>() }
     val teams = remember { mutableStateListOf<Team>() }
     val isLoadingData = remember { mutableStateOf(true) }
 
-    // Edit Dialog State
+    // Dialog States
     var editingMatch by remember { mutableStateOf<Match?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Function to reload data
+    fun refreshData() {
+        scope.launch {
+            try {
+                // Refresh competition details
+                val updatedComp = competitionRepository.getCompetitionById(competitionId)
+                if (updatedComp != null) {
+                    competition = updatedComp
+                }
+
+                val fetchedMatches = competitionRepository.getMatchesForCompetition(competitionId)
+                matches.clear()
+                matches.addAll(fetchedMatches)
+
+                val fetchedTeams = competitionRepository.getTeamsForCompetition(competitionId)
+                teams.clear()
+                teams.addAll(fetchedTeams)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
 
     LaunchedEffect(competitionId) {
         try {
@@ -107,6 +139,37 @@ fun CompetitionDetailScreen(
                 viewModel.fetchWeather(it.latitude, it.longitude, it.eventDate)
             }
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Competition") },
+            text = { Text("Are you sure you want to delete this competition? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                competitionRepository.deleteCompetition(competitionId)
+                                Toast.makeText(context, "Competition deleted", Toast.LENGTH_SHORT).show()
+                                onNavigate("home")
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error deleting competition: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     if (editingMatch != null) {
@@ -144,11 +207,22 @@ fun CompetitionDetailScreen(
                         )
                     }
                 },
+                actions = {
+                    if (competition?.userId == loggedInUserId) {
+                        IconButton(onClick = { onNavigate("organize?competitionId=$competitionId") }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Competition")
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Competition", tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                },
                 colors =
                     TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                     ),
             )
         },
@@ -311,6 +385,7 @@ fun EditMatchDialog(
     onDismiss: () -> Unit,
     onConfirm: (Match) -> Unit,
 ) {
+
     var score1 by remember { mutableStateOf(match.score1.toString()) }
     var score2 by remember { mutableStateOf(match.score2.toString()) }
     var status by remember { mutableStateOf(match.status) }

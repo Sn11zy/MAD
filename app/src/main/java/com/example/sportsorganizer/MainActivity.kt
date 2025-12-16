@@ -53,14 +53,17 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
-                            "organize",
-                        ) {
+                            "organize?competitionId={competitionId}",
+                            arguments = listOf(navArgument("competitionId") { nullable = true; type = NavType.StringType }),
+                        ) { backStackEntry ->
+                            val competitionId = backStackEntry.arguments?.getString("competitionId")?.toLongOrNull()
                             OrganizeScreen(
                                 onUpPress = { navController.navigateUp() },
                                 onNavigate = { route ->
                                     navController.navigate(route)
                                 },
                                 competitionRepository = competitionRepository,
+                                competitionId = competitionId
                             )
                         }
                         composable("referee") {
