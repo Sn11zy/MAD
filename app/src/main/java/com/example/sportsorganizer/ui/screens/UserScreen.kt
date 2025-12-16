@@ -114,7 +114,6 @@ fun UserScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (loggedInUserId == null) {
                 OutlinedTextField(value = first, onValueChange = { first = it }, label = { Text("First name") })
                 OutlinedTextField(value = last, onValueChange = { last = it }, label = { Text("Last name") })
                 OutlinedTextField(value = username, onValueChange = {
@@ -161,15 +160,7 @@ fun UserScreen(
                             }
                         }
                     }
-                }, modifier = Modifier.testTag("login_button")) { Text("Login") }
-            } else {
-                Text(text = "Logged in as: ${loggedInUser?.username ?: loggedInUserId}", style = MaterialTheme.typography.bodyLarge)
-                Button(onClick = {
-                    sessionManager.clearSession()
-                    loggedInUserId = null
-                    Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
-                }) { Text("Logout") }
-            }
+                    onUpPress()}, modifier = Modifier.testTag("login_button")) { Text("Login") }
         }
 
         LaunchedEffect(result) {
