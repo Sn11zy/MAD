@@ -122,13 +122,10 @@ You can also open the project directly in Android Studio for easier development,
 
 Screenshots and demo GIFs will be added during development.
 
-Example embedding:
-```bash
 ![Home screen](docs/screenshots/home.png)
 ![Create event](docs/screenshots/create_event.png)
 
 ![Demo GIF](docs/demo.gif)
-```
 
 ---
 
