@@ -196,7 +196,6 @@ fun CompetitionDetailScreen(
 
                 Button(
                     onClick = { onNavigate("teamNaming/$competitionId") },
-                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Edit Teams & Configuration")
                 }

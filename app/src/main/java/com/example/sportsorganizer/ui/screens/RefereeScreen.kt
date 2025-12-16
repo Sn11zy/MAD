@@ -65,7 +65,7 @@ import kotlin.math.max
 @Composable
 fun RefereeScreen(
     onUpPress: () -> Unit,
-    repository: CompetitionRepository
+    repository: CompetitionRepository,
 ) {
     val viewModel: RefereeViewModel = viewModel(factory = RefereeViewModelFactory(repository))
     val loginState by viewModel.loginState.collectAsState()
@@ -80,7 +80,7 @@ fun RefereeScreen(
             viewModel.clearError()
         }
     }
-    
+
     LaunchedEffect(message) {
         message?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -100,24 +100,26 @@ fun RefereeScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
             )
         },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
         ) {
             when (val state = loginState) {
                 is RefereeLoginState.Idle, is RefereeLoginState.Error -> {
                     RefereeLoginContent(
                         error = (state as? RefereeLoginState.Error)?.message,
-                        onLogin = { id, pass -> viewModel.login(id, pass) }
+                        onLogin = { id, pass -> viewModel.login(id, pass) },
                     )
                 }
                 RefereeLoginState.Loading -> {
@@ -129,13 +131,13 @@ fun RefereeScreen(
                     if (selectedField == null) {
                         FieldSelectionContent(
                             fieldCount = state.competition.fieldCount ?: 1,
-                            onFieldSelected = { viewModel.selectField(it) }
+                            onFieldSelected = { viewModel.selectField(it) },
                         )
                     } else {
                         MatchControlContent(
                             viewModel = viewModel,
                             fieldNumber = selectedField!!,
-                            gameDuration = state.competition.gameDuration
+                            gameDuration = state.competition.gameDuration,
                         )
                     }
                 }
@@ -145,37 +147,40 @@ fun RefereeScreen(
 }
 
 @Composable
-fun RefereeLoginContent(error: String?, onLogin: (String, String) -> Unit) {
+fun RefereeLoginContent(
+    error: String?,
+    onLogin: (String, String) -> Unit,
+) {
     var competitionId by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text("Referee Login", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(24.dp))
-        
+        Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = competitionId,
             onValueChange = { competitionId = it },
             label = { Text("Competition ID") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Referee Password") },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         if (error != null) {
             Text(error, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(16.dp))
@@ -183,7 +188,6 @@ fun RefereeLoginContent(error: String?, onLogin: (String, String) -> Unit) {
 
         Button(
             onClick = { onLogin(competitionId, password) },
-            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login")
         }
@@ -191,24 +195,27 @@ fun RefereeLoginContent(error: String?, onLogin: (String, String) -> Unit) {
 }
 
 @Composable
-fun FieldSelectionContent(fieldCount: Int, onFieldSelected: (Int) -> Unit) {
+fun FieldSelectionContent(
+    fieldCount: Int,
+    onFieldSelected: (Int) -> Unit,
+) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
             "Select Your Field",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
         )
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(fieldCount) { index ->
                 val fieldNum = index + 1
                 Button(
                     onClick = { onFieldSelected(fieldNum) },
                     modifier = Modifier.height(80.dp),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Text("Field $fieldNum", fontSize = 20.sp)
                 }
@@ -218,7 +225,11 @@ fun FieldSelectionContent(fieldCount: Int, onFieldSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int, gameDuration: Int?) {
+fun MatchControlContent(
+    viewModel: RefereeViewModel,
+    fieldNumber: Int,
+    gameDuration: Int?,
+) {
     val matches by viewModel.matches.collectAsState()
     val teamNames by viewModel.teamNames.collectAsState()
 
@@ -226,26 +237,26 @@ fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int, gameDurat
         Text(
             "Field $fieldNumber Matches",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
         )
 
         if (matches.isEmpty()) {
             Text("No matches scheduled for this field.")
         } else {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(matches) { match ->
                     val team1Name = teamNames[match.team1Id] ?: "Team ${match.team1Id}"
                     val team2Name = teamNames[match.team2Id] ?: "Team ${match.team2Id}"
-                    
+
                     MatchCard(
                         match = match,
                         team1Name = team1Name,
                         team2Name = team2Name,
                         gameDuration = gameDuration,
                         onScoreUpdate = { m, s1, s2 -> viewModel.updateMatchScore(m, s1, s2) },
-                        onStatusUpdate = { m, status -> viewModel.updateMatchStatus(m, status) }
+                        onStatusUpdate = { m, status -> viewModel.updateMatchStatus(m, status) },
                     )
                 }
             }
@@ -254,26 +265,29 @@ fun MatchControlContent(viewModel: RefereeViewModel, fieldNumber: Int, gameDurat
 }
 
 @Composable
-fun MatchTimer(match: Match, gameDurationMinutes: Int?) {
+fun MatchTimer(
+    match: Match,
+    gameDurationMinutes: Int?,
+) {
     if (match.status != "in_progress" || gameDurationMinutes == null) return
-    
+
     // Logic to count down
     var remainingSeconds by remember { mutableStateOf((gameDurationMinutes * 60L)) }
-    
+
     LaunchedEffect(match.startTime) {
         val start = match.startTime?.toLongOrNull() ?: System.currentTimeMillis()
-        while(true) {
+        while (true) {
             val elapsed = (System.currentTimeMillis() - start) / 1000
             remainingSeconds = max(0, (gameDurationMinutes * 60) - elapsed)
             delay(1000)
         }
     }
-    
+
     Text(
         text = String.format("%02d:%02d", remainingSeconds / 60, remainingSeconds % 60),
         style = MaterialTheme.typography.displayMedium,
         color = Color.Red,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
     )
     Spacer(modifier = Modifier.height(8.dp))
 }
@@ -285,37 +299,46 @@ fun MatchCard(
     team2Name: String,
     gameDuration: Int?,
     onScoreUpdate: (Match, Int, Int) -> Unit,
-    onStatusUpdate: (Match, String) -> Unit
+    onStatusUpdate: (Match, String) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (match.status == "in_progress") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (match.status ==
+                        "in_progress"
+                    ) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
+            ),
     ) {
         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = when (match.status) {
-                        "scheduled" -> "SCHEDULED"
-                        "in_progress" -> "LIVE"
-                        "finished" -> "FINISHED"
-                        else -> match.status.uppercase()
-                    },
+                    text =
+                        when (match.status) {
+                            "scheduled" -> "SCHEDULED"
+                            "in_progress" -> "LIVE"
+                            "finished" -> "FINISHED"
+                            else -> match.status.uppercase()
+                        },
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (match.status == "in_progress") Color.Red else Color.Gray
+                    color = if (match.status == "in_progress") Color.Red else Color.Gray,
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Timer
             MatchTimer(match, gameDuration)
 
@@ -323,13 +346,13 @@ fun MatchCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Team 1
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                     Text(team1Name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                     Text("${match.score1}", style = MaterialTheme.typography.displayMedium)
-                    
+
                     if (match.status == "in_progress") {
                         Row {
                             Button(onClick = { if (match.score1 > 0) onScoreUpdate(match, match.score1 - 1, match.score2) }) { Text("-") }
@@ -338,14 +361,14 @@ fun MatchCard(
                         }
                     }
                 }
-                
+
                 Text("-", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(horizontal = 8.dp))
 
                 // Team 2
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                     Text(team2Name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                     Text("${match.score2}", style = MaterialTheme.typography.displayMedium)
-                    
+
                     if (match.status == "in_progress") {
                         Row {
                             Button(onClick = { if (match.score2 > 0) onScoreUpdate(match, match.score1, match.score2 - 1) }) { Text("-") }
@@ -363,21 +386,21 @@ fun MatchCard(
                 if (match.status == "scheduled") {
                     Button(
                         onClick = { onStatusUpdate(match, "in_progress") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                     ) {
                         Text("Start Match")
                     }
                 } else if (match.status == "in_progress") {
                     Button(
                         onClick = { onStatusUpdate(match, "finished") },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     ) {
                         Text("Finish Match")
                     }
                 } else {
                     Button(
                         onClick = { onStatusUpdate(match, "in_progress") }, // Reopen if needed
-                        colors = ButtonDefaults.textButtonColors()
+                        colors = ButtonDefaults.textButtonColors(),
                     ) {
                         Text("Reopen Match")
                     }

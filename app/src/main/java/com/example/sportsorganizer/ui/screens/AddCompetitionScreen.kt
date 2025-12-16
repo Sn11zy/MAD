@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -434,7 +435,7 @@ fun OrganizeScreen(
                         winningScore = winningScore,
                         gameDuration = gameDuration,
                     )
-                }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Create") }
+                }, modifier = Modifier.padding(top = 8.dp)) { Text("Create") }
             }
             Text(
                 text = "Your competitions",
@@ -465,10 +466,20 @@ fun OrganizeScreen(
                                         onNavigate("competitionDetail/${competition.id}")
                                     },
                         ) {
-                            Text(
-                                text = competition.competitionName,
-                                modifier = Modifier.padding(16.dp),
-                            )
+                            Row(
+                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = competition.competitionName,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                )
+                            }
                         }
                     }
                 }

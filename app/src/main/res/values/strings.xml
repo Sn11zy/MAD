@@ -7,9 +7,9 @@
 
     <string name="navigate_back_description">Back</string>
 
-    <string name="competitor_screen_title">Competitor</string>
+    <string name="competitor_screen_title">Competitor Login</string>
 
-    <string name="referee_screen_title">Referee</string>
+    <string name="referee_screen_title">Referee Login</string>
 
     <string name="organize_screen_title">Organize</string>
 

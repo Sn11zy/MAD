@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -105,11 +104,20 @@ fun TeamNamingScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                         .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("Team Names", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+                Text(
+                    "Team Names",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier =
+                        Modifier
+                            .padding(bottom = 8.dp)
+                            .align(Alignment.CenterHorizontally),
+                )
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     itemsIndexed(teams, key = { _, team -> team.id }) { index, team ->
                         OutlinedTextField(
@@ -118,7 +126,7 @@ fun TeamNamingScreen(
                                 teams[index] = team.copy(teamName = newName)
                             },
                             label = { Text("Team ${index + 1}") },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier,
                         )
                     }
                 }
@@ -167,7 +175,6 @@ fun TeamNamingScreen(
                     },
                     modifier =
                         Modifier
-                            .fillMaxWidth()
                             .padding(top = 16.dp),
                 ) {
                     Text("Confirm & Generate Matches")

@@ -76,7 +76,7 @@ fun CompetitorScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Competitor View") },
+                title = { Text("Competitor Login") },
                 navigationIcon = {
                     IconButton(onClick = onUpPress) {
                         Icon(
@@ -144,8 +144,7 @@ fun CompetitorLoginContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Competitor Login", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = competitionId,
@@ -172,7 +171,6 @@ fun CompetitorLoginContent(
 
         Button(
             onClick = { onLogin(competitionId, password) },
-            modifier = Modifier.fillMaxWidth(),
         ) {
             Text("View Competition")
         }
