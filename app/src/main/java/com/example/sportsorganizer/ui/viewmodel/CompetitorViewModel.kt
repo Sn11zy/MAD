@@ -15,25 +15,34 @@ import kotlinx.coroutines.launch
 
 sealed class CompetitorUiState {
     object Idle : CompetitorUiState()
+
     object Loading : CompetitorUiState()
+
     data class Success(
         val competition: Competition,
         val standings: Map<String, List<TeamStats>>, // Changed to Map<GroupName, Stats>
         val matches: List<Match>,
-        val teamNames: Map<Long, String>
+        val teamNames: Map<Long, String>,
     ) : CompetitorUiState()
-    data class Error(val message: String) : CompetitorUiState()
+
+    data class Error(
+        val message: String,
+    ) : CompetitorUiState()
 }
 
-class CompetitorViewModel(private val repository: CompetitionRepository) : ViewModel() {
-
+class CompetitorViewModel(
+    private val repository: CompetitionRepository,
+) : ViewModel() {
     private val _uiState = MutableStateFlow<CompetitorUiState>(CompetitorUiState.Idle)
     val uiState: StateFlow<CompetitorUiState> = _uiState.asStateFlow()
-    
+
     // To keep track of current ID for refreshing
     private var currentCompetitionId: Long? = null
 
-    fun login(competitionIdStr: String) {
+    fun login(
+        competitionIdStr: String,
+        password: String,
+    ) {
         val id = competitionIdStr.toLongOrNull()
         if (id == null) {
             _uiState.value = CompetitorUiState.Error("Invalid Competition ID")
@@ -44,31 +53,31 @@ class CompetitorViewModel(private val repository: CompetitionRepository) : ViewM
             _uiState.value = CompetitorUiState.Loading
             try {
                 val competition = repository.getCompetitionById(id)
-                if (competition != null) {
+                if (competition != null && competition.competitionPassword == password) {
                     currentCompetitionId = id
                     loadData(competition)
                 } else {
-                    _uiState.value = CompetitorUiState.Error("Competition not found")
+                    _uiState.value = CompetitorUiState.Error("Invalid ID or Password")
                 }
             } catch (e: Exception) {
                 _uiState.value = CompetitorUiState.Error(e.message ?: "Login failed")
             }
         }
     }
-    
+
     fun refresh() {
         currentCompetitionId?.let { id ->
-             viewModelScope.launch {
-                 try {
-                     val competition = repository.getCompetitionById(id)
-                     if (competition != null) {
-                         loadData(competition)
-                     }
-                 } catch (e: Exception) {
-                     // Keep current state but maybe show error? 
-                     // For now silent fail on refresh or just log
-                 }
-             }
+            viewModelScope.launch {
+                try {
+                    val competition = repository.getCompetitionById(id)
+                    if (competition != null) {
+                        loadData(competition)
+                    }
+                } catch (e: Exception) {
+                    // Keep current state but maybe show error?
+                    // For now silent fail on refresh or just log
+                }
+            }
         }
     }
 
@@ -76,49 +85,53 @@ class CompetitorViewModel(private val repository: CompetitionRepository) : ViewM
         try {
             val teams = repository.getTeamsForCompetition(competition.id)
             val matches = repository.getMatchesForCompetition(competition.id)
-            
+
             // Map team IDs to names
             val teamNames = teams.associate { it.id to it.teamName }
-            
+
             // Calculate standings by group
             val groupMatches = matches.filter { it.stage?.startsWith("Group") == true }
             val standingsByGroup = mutableMapOf<String, List<TeamStats>>()
-            
+
             val teamsByGroup = teams.groupBy { it.groupName ?: "General" }
-            
+
             teamsByGroup.forEach { (groupName, groupTeams) ->
                 val teamIds = groupTeams.map { it.id }
                 val groupStandings = StandingsCalculator.calculateStandings(groupMatches, teamIds)
                 standingsByGroup[groupName] = groupStandings
             }
-            
+
             // Sort matches: In Progress, Scheduled, Finished
             // Filter future matches where no teams are assigned yet
             val activeMatches = matches.filter { it.team1Id != null || it.team2Id != null }
-            
-             val sortedMatches = activeMatches.sortedWith(
-                compareBy<Match> { 
-                    when (it.status) {
-                        "in_progress" -> 0
-                        "scheduled" -> 1
-                        else -> 2
-                    }
-                }.thenBy { it.id }
-            )
 
-            _uiState.value = CompetitorUiState.Success(
-                competition = competition,
-                standings = standingsByGroup,
-                matches = sortedMatches,
-                teamNames = teamNames
-            )
+            val sortedMatches =
+                activeMatches.sortedWith(
+                    compareBy<Match> {
+                        when (it.status) {
+                            "in_progress" -> 0
+                            "scheduled" -> 1
+                            else -> 2
+                        }
+                    }.thenBy { it.id },
+                )
+
+            _uiState.value =
+                CompetitorUiState.Success(
+                    competition = competition,
+                    standings = standingsByGroup,
+                    matches = sortedMatches,
+                    teamNames = teamNames,
+                )
         } catch (e: Exception) {
             _uiState.value = CompetitorUiState.Error("Failed to load data: ${e.message}")
         }
     }
 }
 
-class CompetitorViewModelFactory(private val repository: CompetitionRepository) : ViewModelProvider.Factory {
+class CompetitorViewModelFactory(
+    private val repository: CompetitionRepository,
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CompetitorViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")

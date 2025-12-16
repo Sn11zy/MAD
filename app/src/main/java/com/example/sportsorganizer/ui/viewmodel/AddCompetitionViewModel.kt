@@ -77,7 +77,7 @@ class AddCompetitionViewModel(
             }
         }
     }
-    
+
     fun fetchCompetitions() {
         viewModelScope.launch {
             try {
@@ -118,7 +118,9 @@ class AddCompetitionViewModel(
         numberOfGroups: Int?,
         qualifiersPerGroup: Int?,
         pointsPerWin: Int = 3,
-        pointsPerDraw: Int = 1
+        pointsPerDraw: Int = 1,
+        winningScore: Int? = null,
+        gameDuration: Int? = null,
     ) {
         val city = _selectedCity.value
         if (city == null) {
@@ -133,43 +135,46 @@ class AddCompetitionViewModel(
                 val today = LocalDate.now().toString() // YYYY-MM-DD
 
                 // 1. Create Competition
-                val competition = Competition(
-                    competitionName = competitionName,
-                    userId = userId,
-                    latitude = city.latitude,
-                    longitude = city.longitude,
-                    eventDate = today,
-                    refereePassword = refereePassword,
-                    competitionPassword = competitionPassword,
-                    startDate = startDate,
-                    endDate = endDate,
-                    sport = sport,
-                    fieldCount = fieldCount,
-                    scoringType = scoringType,
-                    numberOfTeams = numberOfTeams,
-                    tournamentMode = tournamentMode,
-                    // New Fields
-                    numberOfGroups = numberOfGroups,
-                    qualifiersPerGroup = qualifiersPerGroup,
-                    pointsPerWin = pointsPerWin,
-                    pointsPerDraw = pointsPerDraw
-                )
-                
+                val competition =
+                    Competition(
+                        competitionName = competitionName,
+                        userId = userId,
+                        latitude = city.latitude,
+                        longitude = city.longitude,
+                        eventDate = today,
+                        refereePassword = refereePassword,
+                        competitionPassword = competitionPassword,
+                        startDate = startDate,
+                        endDate = endDate,
+                        sport = sport,
+                        fieldCount = fieldCount,
+                        scoringType = scoringType,
+                        numberOfTeams = numberOfTeams,
+                        tournamentMode = tournamentMode,
+                        // New Fields
+                        numberOfGroups = numberOfGroups,
+                        qualifiersPerGroup = qualifiersPerGroup,
+                        pointsPerWin = pointsPerWin,
+                        pointsPerDraw = pointsPerDraw,
+                        winningScore = winningScore,
+                        gameDuration = gameDuration,
+                    )
+
                 val createdCompetition = competitionRepository.createCompetition(competition)
-                
+
                 if (createdCompetition != null) {
                     val competitionId = createdCompetition.id
-                    
+
                     // 2. Generate and Insert Teams (Placeholders)
                     val teams = MatchGenerator.generateTeams(competitionId, numberOfTeams)
                     competitionRepository.createTeams(teams)
-                    
+
                     withContext(Dispatchers.Main) {
                         _creationResult.value = CreationResult.Success(competitionId)
                         fetchCompetitions()
                     }
                 } else {
-                     withContext(Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         _creationResult.value = CreationResult.Error("Failed to create competition")
                     }
                 }
