@@ -6,6 +6,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/**
+ * Typography configuration for the Sports Organizer app.
+ *
+ * Defines text styles using Material Design 3 typography system.
+ * Currently customizes the bodyLarge style with default font settings.
+ */
 val Typography =
     Typography(
         bodyLarge =

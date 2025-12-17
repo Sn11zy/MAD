@@ -12,6 +12,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+/**
+ * Dark color scheme for the Sports Organizer app.
+ *
+ * Uses a green color palette with light green primary color
+ * and dark background for comfortable viewing in low-light conditions.
+ */
 private val DarkColorScheme =
     darkColorScheme(
         primary = Color(0xFF80DA9D),
@@ -20,6 +26,12 @@ private val DarkColorScheme =
         onSurface = Color(0xFFE1E3DF),
     )
 
+/**
+ * Light color scheme for the Sports Organizer app.
+ *
+ * Uses a green color palette with dark green primary color
+ * and light background for optimal readability in bright conditions.
+ */
 private val LightColorScheme =
     lightColorScheme(
         primary = Color(0xFF006D3D),
@@ -28,6 +40,15 @@ private val LightColorScheme =
         onSurface = Color(0xFF191C1A),
     )
 
+/**
+ * Main theme composable for the Sports Organizer app.
+ *
+ * Applies Material Design 3 theming with support for light and dark modes.
+ * Automatically adjusts system UI elements like the status bar to match the theme.
+ *
+ * @param darkTheme Whether to use dark theme (defaults to system preference)
+ * @param content The composable content to wrap with the theme
+ */
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SportsOrganizerTheme(

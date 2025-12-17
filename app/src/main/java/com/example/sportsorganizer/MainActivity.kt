@@ -27,6 +27,18 @@ import com.example.sportsorganizer.ui.screens.UserScreen
 import com.example.sportsorganizer.ui.theme.SportsOrganizerTheme
 import com.example.sportsorganizer.ui.viewmodel.ThemeViewModel
 
+/**
+ * Main activity for the Sports Organizer application.
+ *
+ * Sets up the navigation graph and theme configuration.
+ * Manages routing between different screens including:
+ * - Home screen
+ * - Competition management (organizer)
+ * - Referee interface
+ * - Competitor view
+ * - User management
+ * - About screen
+ */
 class MainActivity : ComponentActivity() {
     private val themeViewModel by viewModels<ThemeViewModel>()
 
@@ -54,7 +66,13 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             "organize?competitionId={competitionId}",
-                            arguments = listOf(navArgument("competitionId") { nullable = true; type = NavType.StringType }),
+                            arguments =
+                                listOf(
+                                    navArgument("competitionId") {
+                                        nullable = true
+                                        type = NavType.StringType
+                                    },
+                                ),
                         ) { backStackEntry ->
                             val competitionId = backStackEntry.arguments?.getString("competitionId")?.toLongOrNull()
                             OrganizeScreen(
@@ -63,7 +81,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate(route)
                                 },
                                 competitionRepository = competitionRepository,
-                                competitionId = competitionId
+                                competitionId = competitionId,
                             )
                         }
                         composable("referee") {

@@ -19,18 +19,44 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
+/**
+ * ViewModel for creating and editing competitions.
+ *
+ * Manages competition creation/update workflows including:
+ * - City search and selection for location
+ * - Competition configuration
+ * - Team and match generation
+ * - Competition list management
+ *
+ * @property competitionRepository Repository for competition data operations
+ */
 class AddCompetitionViewModel(
     private val competitionRepository: CompetitionRepository,
 ) : ViewModel() {
+    /**
+     * Sealed class representing the state of competition creation/update.
+     */
     sealed class CreationResult {
+        /** Initial idle state */
         data object Idle : CreationResult()
 
+        /** Loading state during operation */
         data object Loading : CreationResult()
 
+        /**
+         * Success state after operation completes.
+         *
+         * @property competitionId The ID of the created/updated competition
+         */
         data class Success(
             val competitionId: Long,
         ) : CreationResult()
 
+        /**
+         * Error state if operation fails.
+         *
+         * @property message Human-readable error message
+         */
         data class Error(
             val message: String,
         ) : CreationResult()
@@ -38,18 +64,38 @@ class AddCompetitionViewModel(
 
     private val _creationResult: MutableStateFlow<CreationResult> =
         MutableStateFlow(CreationResult.Idle)
+
+    /**
+     * Observable state flow of competition creation/update result.
+     */
     val creationResult: StateFlow<CreationResult> = _creationResult
 
     private val _competitions = MutableStateFlow<List<Competition>>(emptyList())
+
+    /**
+     * Observable state flow of all competitions.
+     */
     val competitions: StateFlow<List<Competition>> = _competitions.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
+
+    /**
+     * Observable state flow of the current city search query.
+     */
     val searchQuery: StateFlow<String> = _searchQuery
 
     private val _searchResults = MutableStateFlow<List<City>>(emptyList())
+
+    /**
+     * Observable state flow of city search results.
+     */
     val searchResults: StateFlow<List<City>> = _searchResults
 
     private val _selectedCity = MutableStateFlow<City?>(null)
+
+    /**
+     * Observable state flow of the selected city for the competition location.
+     */
     val selectedCity: StateFlow<City?> = _selectedCity
 
     private val geocodingRepository = GeocodingRepository()
@@ -78,6 +124,11 @@ class AddCompetitionViewModel(
         }
     }
 
+    /**
+     * Fetches all competitions from the repository.
+     *
+     * Updates the [competitions] state flow with the retrieved data.
+     */
     fun fetchCompetitions() {
         viewModelScope.launch {
             try {
@@ -88,6 +139,14 @@ class AddCompetitionViewModel(
         }
     }
 
+    /**
+     * Updates the city search query.
+     *
+     * Triggers a debounced search after 300ms of inactivity.
+     * Clears search results if query is blank.
+     *
+     * @param query The search query string
+     */
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         if (query.isBlank()) {
@@ -95,12 +154,27 @@ class AddCompetitionViewModel(
         }
     }
 
+    /**
+     * Handles city selection from search results.
+     *
+     * Updates the selected city, displays it in the search query,
+     * and clears the search results.
+     *
+     * @param city The selected city
+     */
     fun onCitySelected(city: City) {
         _selectedCity.value = city
         _searchQuery.value = "${city.name}, ${city.country ?: ""}"
         _searchResults.value = emptyList()
     }
 
+    /**
+     * Loads an existing competition for editing.
+     *
+     * Retrieves the competition and sets its location as the selected city.
+     *
+     * @param competitionId The ID of the competition to load
+     */
     fun loadCompetition(competitionId: Long) {
         viewModelScope.launch {
             val competition = competitionRepository.getCompetitionById(competitionId)

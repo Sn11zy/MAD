@@ -5,15 +5,49 @@ import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
+/**
+ * Utility class for secure password hashing and verification using PBKDF2.
+ *
+ * This class provides methods to hash passwords with salt and verify passwords against
+ * stored hashes. It uses PBKDF2 (Password-Based Key Derivation Function 2) with either
+ * HMAC-SHA256 (preferred) or HMAC-SHA1 (fallback) algorithms for maximum compatibility
+ * across different Android API levels.
+ *
+ * The implementation includes:
+ * - Automatic algorithm selection based on availability
+ * - Secure random salt generation
+ * - Constant-time comparison to prevent timing attacks
+ * - Support for legacy hash format migration
+ *
+ * @see hashPassword
+ * @see verifyPassword
+ */
 class PasswordHashing {
     companion object {
+        /** Preferred PBKDF2 algorithm using HMAC-SHA256 */
         private const val PREFERRED_ALGO = "PBKDF2WithHmacSHA256"
+
+        /** Fallback PBKDF2 algorithm using HMAC-SHA1 for older Android versions */
         private const val FALLBACK_ALGO = "PBKDF2WithHmacSHA1"
 
+        /** Number of iterations for PBKDF2 key derivation */
         private const val ITERATIONS = 100_000
-        private const val SALT_LENGTH = 16 // bytes
-        private const val KEY_LENGTH = 256 // bits
 
+        /** Length of the random salt in bytes */
+        private const val SALT_LENGTH = 16
+
+        /** Length of the derived key in bits */
+        private const val KEY_LENGTH = 256
+
+        /**
+         * Selects an available PBKDF2 algorithm based on platform support.
+         *
+         * Attempts to use PBKDF2WithHmacSHA256 first, falling back to
+         * PBKDF2WithHmacSHA1 if the preferred algorithm is not available.
+         *
+         * @return The name of an available PBKDF2 algorithm
+         * @throws java.security.NoSuchAlgorithmException if neither algorithm is available
+         */
         private fun selectAvailableAlgorithm(): String =
             try {
                 SecretKeyFactory.getInstance(PREFERRED_ALGO)
@@ -29,6 +63,26 @@ class PasswordHashing {
                 }
             }
 
+        /**
+         * Hashes a password using PBKDF2 with a randomly generated salt.
+         *
+         * The function generates a cryptographically secure random salt and applies
+         * PBKDF2 key derivation with the available algorithm (HMAC-SHA256 or HMAC-SHA1).
+         * The resulting hash is encoded with Base64 along with the algorithm name,
+         * iteration count, and salt for storage.
+         *
+         * @param password The plaintext password to hash
+         * @return A Base64-encoded string containing the algorithm, iterations, salt,
+         *         and hash in the format: "algorithm:iterations:salt:hash"
+         * @throws java.security.NoSuchAlgorithmException if PBKDF2 is not available
+         * @throws java.security.spec.InvalidKeySpecException if the key spec is invalid
+         *
+         * @sample
+         * ```
+         * val hashedPassword = PasswordHashing.hashPassword("mySecurePassword123")
+         * // Result: "PBKDF2WithHmacSHA256:100000:base64Salt:base64Hash"
+         * ```
+         */
         fun hashPassword(password: String): String {
             val random = SecureRandom()
             val salt = ByteArray(SALT_LENGTH).also { random.nextBytes(it) }
@@ -43,6 +97,35 @@ class PasswordHashing {
             return "$algorithm:$ITERATIONS:${encoder.encodeToString(salt)}:${encoder.encodeToString(hash)}"
         }
 
+        /**
+         * Verifies an input password against a stored hash.
+         *
+         * This function parses the stored hash to extract the algorithm, iterations,
+         * salt, and expected hash. It then derives a hash from the input password
+         * using the same parameters and compares them in constant time to prevent
+         * timing attacks.
+         *
+         * The function supports two hash formats:
+         * - Current format: "algorithm:iterations:salt:hash" (4 parts)
+         * - Legacy format: "iterations:salt:hash" (3 parts, assumes PBKDF2WithHmacSHA256)
+         *
+         * If the stored algorithm is not available, the function attempts to fall back
+         * to other available algorithms for maximum compatibility.
+         *
+         * @param inputPassword The plaintext password to verify
+         * @param storedHash The Base64-encoded hash string from storage
+         * @return `true` if the password matches the hash, `false` otherwise
+         *
+         * @sample
+         * ```
+         * val storedHash = PasswordHashing.hashPassword("myPassword")
+         * val isValid = PasswordHashing.verifyPassword("myPassword", storedHash)
+         * // isValid: true
+         *
+         * val isInvalid = PasswordHashing.verifyPassword("wrongPassword", storedHash)
+         * // isInvalid: false
+         * ```
+         */
         fun verifyPassword(
             inputPassword: String,
             storedHash: String,
@@ -117,6 +200,21 @@ class PasswordHashing {
             }
         }
 
+        /**
+         * Compares two byte arrays in constant time to prevent timing attacks.
+         *
+         * This function ensures that the comparison time does not depend on where
+         * the arrays differ, which prevents attackers from using timing information
+         * to deduce information about the stored hash.
+         *
+         * The implementation uses bitwise XOR to compare all bytes, accumulating
+         * differences in a result variable. The function always examines every byte,
+         * regardless of where differences are found.
+         *
+         * @param a The first byte array to compare
+         * @param b The second byte array to compare
+         * @return `true` if the arrays are identical, `false` otherwise
+         */
         private fun constantTimeArrayEquals(
             a: ByteArray,
             b: ByteArray,

@@ -144,7 +144,7 @@ object MatchGenerator {
 
                     var t1Id: Long? = null
                     var t2Id: Long? = null
-                    var status = "scheduled"
+                    val status = "scheduled"
 
                     if (r == 1) {
                         val t1Index = m * 2
@@ -175,6 +175,18 @@ object MatchGenerator {
         }
     }
 
+    /**
+     * Generates matches for groups based on the number of groups specified.
+     *
+     * If there's only one group, generates a simple round-robin. Otherwise,
+     * generates round-robin matches within each group separately.
+     *
+     * @param competitionId The ID of the competition
+     * @param teams List of teams to generate matches for
+     * @param fieldCount Number of fields available
+     * @param numberOfGroups Number of groups in the competition
+     * @return List of [Match] objects for all groups
+     */
     private fun generateGroupMatches(
         competitionId: Long,
         teams: List<Team>,
@@ -206,6 +218,19 @@ object MatchGenerator {
         return matches
     }
 
+    /**
+     * Generates round-robin matches for a set of teams.
+     *
+     * Creates matches where every team plays every other team once.
+     * Distributes matches across available fields in a round-robin fashion.
+     *
+     * @param competitionId The ID of the competition
+     * @param teams List of teams to generate matches for
+     * @param fieldCount Number of fields to distribute matches across
+     * @param stageName Name of the stage (e.g., "Group A", "Group Stage")
+     * @param startCounter Starting value for the match counter (for field assignment)
+     * @return A Pair containing the list of [Match] objects and the updated match counter
+     */
     private fun generateRoundRobin(
         competitionId: Long,
         teams: List<Team>,

@@ -11,49 +11,110 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * Sealed class representing referee authentication state.
+ */
 sealed class RefereeLoginState {
+    /** Initial idle state */
     object Idle : RefereeLoginState()
 
+    /** Loading state during authentication */
     object Loading : RefereeLoginState()
 
+    /**
+     * Success state after successful login.
+     *
+     * @property competition The competition the referee has access to
+     */
     data class Success(
         val competition: Competition,
     ) : RefereeLoginState()
 
+    /**
+     * Error state if authentication fails.
+     *
+     * @property message Human-readable error message
+     */
     data class Error(
         val message: String,
     ) : RefereeLoginState()
 }
 
+/**
+ * ViewModel for referee functionality.
+ *
+ * Manages referee authentication, match viewing, and score updates.
+ * Referees can view matches by field and update scores during games.
+ *
+ * @property repository Repository for competition data operations
+ */
 class RefereeViewModel(
     private val repository: CompetitionRepository,
 ) : ViewModel() {
     private val _loginState = MutableStateFlow<RefereeLoginState>(RefereeLoginState.Idle)
+
+    /**
+     * Observable state flow of referee login state.
+     */
     val loginState: StateFlow<RefereeLoginState> = _loginState.asStateFlow()
 
     private val _matches = MutableStateFlow<List<Match>>(emptyList())
+
+    /**
+     * Observable state flow of matches for the selected field.
+     */
     val matches: StateFlow<List<Match>> = _matches.asStateFlow()
 
     private val _teamNames = MutableStateFlow<Map<Long, String>>(emptyMap())
+
+    /**
+     * Observable state flow mapping team IDs to team names.
+     */
     val teamNames: StateFlow<Map<Long, String>> = _teamNames.asStateFlow()
 
     private val _selectedField = MutableStateFlow<Int?>(null)
+
+    /**
+     * Observable state flow of the currently selected field number.
+     */
     val selectedField: StateFlow<Int?> = _selectedField.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
+
+    /**
+     * Observable state flow of error messages.
+     */
     val error: StateFlow<String?> = _error.asStateFlow()
 
     private val _message = MutableStateFlow<String?>(null)
+
+    /**
+     * Observable state flow of informational messages.
+     */
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    /**
+     * Clears the current error message.
+     */
     fun clearError() {
         _error.value = null
     }
 
+    /**
+     * Clears the current informational message.
+     */
     fun clearMessage() {
         _message.value = null
     }
 
+    /**
+     * Authenticates a referee with competition ID and password.
+     *
+     * Validates credentials and loads team data on success.
+     *
+     * @param competitionIdStr The competition ID as a string
+     * @param password The referee password
+     */
     fun login(
         competitionIdStr: String,
         password: String,
@@ -91,6 +152,13 @@ class RefereeViewModel(
         }
     }
 
+    /**
+     * Selects a field and loads its matches.
+     *
+     * Updates the selected field and fetches all matches for that field.
+     *
+     * @param fieldNumber The field number to select
+     */
     fun selectField(fieldNumber: Int) {
         _selectedField.value = fieldNumber
         val state = _loginState.value
@@ -99,6 +167,15 @@ class RefereeViewModel(
         }
     }
 
+    /**
+     * Fetches all matches for a specific field.
+     *
+     * Retrieves matches and sorts them by status (in progress, scheduled, finished).
+     * Filters out placeholder matches with no assigned teams.
+     *
+     * @param competitionId The ID of the competition
+     * @param fieldNumber The field number to fetch matches for
+     */
     fun fetchMatches(
         competitionId: Long,
         fieldNumber: Int,
@@ -126,6 +203,16 @@ class RefereeViewModel(
         }
     }
 
+    /**
+     * Updates the score for a match.
+     *
+     * Optimistically updates the local state and persists to the database.
+     * Checks if the winning score has been reached and displays a message.
+     *
+     * @param match The match to update
+     * @param newScore1 The new score for team 1
+     * @param newScore2 The new score for team 2
+     */
     fun updateMatchScore(
         match: Match,
         newScore1: Int,
