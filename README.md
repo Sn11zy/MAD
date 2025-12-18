@@ -120,12 +120,7 @@ You can also open the project directly in Android Studio for easier development,
 
 ## 📸 Usage & Demo
 
-Screenshots and demo GIFs will be added during development.
-
-![Home screen](docs/screenshots/home.png)
-![Create event](docs/screenshots/create_event.png)
-
-![Demo GIF](docs/demo.gif)
+[DEMO](https://drive.google.com/file/d/1euVF-HODnFY74Z3SUfFDM0iNzhpLZMi0/view?resourcekey)
 
 ---
 
@@ -157,21 +152,4 @@ Initial UI sketches and mockups were created in Figma:
 
 https://www.figma.com/design/HGYZaQNY97f8Z4YYkAvwpt/Untitled?node-id=0-1
 
----
 
-## 🤝 Contributing
-	•	Fork the repository and create a new branch
-	•	Follow Kotlin and Android best practices
-	•	Add screenshots or GIFs to docs/screenshots/ when introducing UI changes
-	•	Open a pull request for review
-
----
-
-## 📄 License
-
-This project currently has no license specified.
-Add a LICENSE file to the repository root if you wish to define usage terms.
-
----
-
-README.md prepared for the MAD (Mobile App Development) course project.
