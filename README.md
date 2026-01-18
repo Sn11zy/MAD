@@ -161,7 +161,15 @@ You can also open the project directly in Android Studio for easier development,
 
 ---
 
-## 📸 Usage & Demo
+## 📸 Usage Instructions & Demo
+
+### 📘 Usage Instructions
+
+[Competitor Walkthrough](docs/screenshots/competitor.md)
+
+[Referee Walkthrough](docs/screenshots/referee.md)
+
+[Organizer Walkthrough](docs/screenshots/organizer.md)
 
 ### Project demo can be found here: [Click for demo](https://drive.google.com/file/d/1euVF-HODnFY74Z3SUfFDM0iNzhpLZMi0/view?resourcekey)
 
