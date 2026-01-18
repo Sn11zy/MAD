@@ -10,7 +10,7 @@ The app follows the **MVVM (Model-View-ViewModel)** architectural pattern to ens
 graph TD
     UI[Jetpack Compose UI] <--> VM[ViewModel]
     VM <--> Repo[Repository Layer]
-    Repo <--> Remote[Supabase (PostgreSQL)]
+    Repo <--> Remote[Supabase / PostgreSQL]
     Repo <--> Weather[Weather API]
 ```
 
