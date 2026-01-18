@@ -8,7 +8,7 @@
 
 ---
 
-## ❓ What Problem Does This Solve?
+## What Problem Does This Solve?
 
 Organizing local sports tournaments is often chaotic.
 *   **The Problem:** Organizers rely on messy spreadsheets or pen-and-paper brackets. Referees have to physically run scores to a central table. Spectators are left guessing when their friend is playing next.
@@ -19,7 +19,7 @@ Organizing local sports tournaments is often chaotic.
 
 ---
 
-## 🔒 Permissions & Privacy
+## Permissions & Privacy
 
 This app is designed to respect user privacy.
 
@@ -34,7 +34,7 @@ This app is designed to respect user privacy.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 - Project Overview  
 - Goals  
@@ -51,7 +51,7 @@ This app is designed to respect user privacy.
 
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -108,6 +108,17 @@ The focus is on **simplicity, usability, and extensibility**, making it easy to 
 - **Build System:** Gradle (Gradle Wrapper included)  
 - **IDE:** Android Studio  
 - **Version Control:** Git & GitHub  
+
+---
+
+## Technical Highlights
+
+For a deep dive into our database schema, bracket generation algorithms, and system design, please see our [Architecture & Algorithms Documentation](docs/ARCHITECTURE.md).
+
+### Key Features
+*   **Recursive Bracket Generation:** Automatically builds tournament trees for any number of teams.
+*   **Real-time Standings:** Custom `Comparator` logic sorts league tables by Points > Goal Diff > Goals Scored.
+*   **Asynchronous Data:** Uses Kotlin Coroutines for non-blocking database and weather API calls.
 
 ---
 
