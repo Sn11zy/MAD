@@ -8,6 +8,32 @@
 
 ---
 
+## ❓ What Problem Does This Solve?
+
+Organizing local sports tournaments is often chaotic.
+*   **The Problem:** Organizers rely on messy spreadsheets or pen-and-paper brackets. Referees have to physically run scores to a central table. Spectators are left guessing when their friend is playing next.
+*   **Our Solution:**
+    *   **For Organizers:** Create a tournament in seconds. Define field counts, rules, and let the app auto-generate the schedule (Round Robin or Knockout).
+    *   **For Referees:** A secure, simple login to update scores live from the sideline. No more paper scorecards.
+    *   **For Teams & Fans:** Real-time access to standings and brackets. Know exactly where and when you play next.
+
+---
+
+## 🔒 Permissions & Privacy
+
+This app is designed to respect user privacy.
+
+*   **Permissions:**
+    *   `INTERNET`: Required to fetch tournament data from the cloud (Supabase) and retrieve weather forecasts.
+    *   *No other permissions (Camera, Location, Contacts) are required.*
+
+*   **Data Handling:**
+    *   **Authentication:** User passwords are hashed securely before storage.
+    *   **Storage:** All tournament data (scores, teams, schedules) is stored securely in a remote Supabase (PostgreSQL) database.
+    *   **Tracking:** The app does not track user location or device identifiers.
+
+---
+
 ## 📑 Table of Contents
 
 - Project Overview  
@@ -22,6 +48,12 @@
 - Wireframes / Mockups  
 - Contributing  
 - License  
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
