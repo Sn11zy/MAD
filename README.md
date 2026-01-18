@@ -163,7 +163,7 @@ You can also open the project directly in Android Studio for easier development,
 
 ## 📸 Usage & Demo
 
-[DEMO](https://drive.google.com/file/d/1euVF-HODnFY74Z3SUfFDM0iNzhpLZMi0/view?resourcekey)
+### Project demo can be found here: [Click for demo](https://drive.google.com/file/d/1euVF-HODnFY74Z3SUfFDM0iNzhpLZMi0/view?resourcekey)
 
 ---
 
