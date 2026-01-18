@@ -1,6 +1,6 @@
 ### 🗂️ Referee Walkthrough
 
-The following steps illustrate how a referee .
+The following steps illustrate how a referee can do his work.
 
 **Step 1 – Main page view**  
 The referee can be a referee in a competition by clicking on 'referee' button.
